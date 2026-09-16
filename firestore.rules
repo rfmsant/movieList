@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Only this one document (your watched-list) is reachable at all.
+    // Everything else in the database is denied by default.
+    match /state/watched {
+      allow read, write: if true;
+    }
+  }
+}

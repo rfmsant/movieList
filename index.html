@@ -1,1 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cinema Classics</title>
+<meta name="description" content="Track the must-watch classics and every Oscar-winning film in history.">
+<meta name="theme-color" content="#0f1115">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
 
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="#/" class="brand">🎬 Cinema Classics</a>
+    <nav class="tabs">
+      <a href="#/classics" data-tab="classics">Classics</a>
+      <a href="#/oscars" data-tab="oscars">Oscars</a>
+      <a href="#/stats" data-tab="stats">Progress</a>
+    </nav>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<div id="detail-overlay" class="overlay hidden">
+  <div class="overlay-panel" id="detail-panel"></div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
