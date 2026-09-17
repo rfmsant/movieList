@@ -182,11 +182,20 @@ function renderHome() {
       <a href="#/oscars" class="chip">🏆 Browse the Oscars</a>
       <div class="chip" id="home-random">🎲 Surprise me</div>
     </div>
-    <h2 class="section-title">Recently added</h2>
-    <div class="grid">${films.slice(0, 12).map(filmCard).join("")}</div>
+    <h2 class="section-title">🎲 Random picks</h2>
+    <div class="grid">${sampleFilms(10).map(filmCard).join("")}</div>
   `;
   attachCardHandlers(app);
   document.getElementById("home-random").addEventListener("click", openRandomPicker);
+}
+
+function sampleFilms(n) {
+  const copy = [...films];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, n);
 }
 
 // ---------------------------------------------------------------- classics
