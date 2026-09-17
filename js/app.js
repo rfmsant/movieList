@@ -4,7 +4,7 @@
 // on that Worker — it's not truly private (anyone can read it from this
 // file) but it stops casual strangers who find the site from burning your
 // API budget without at least looking at the page source.
-const WORKER_URL = "https://white-resonance-78cf.movies-787.workers.dev";
+const WORKER_URL = "https://cinema-analysis.YOUR-SUBDOMAIN.workers.dev";
 const APP_SECRET = "Fblq3PlqmlKQ3ntT7MyRnyCkDGofLYhX";
 
 // Firebase is loaded dynamically so a blocked/offline network (ad-blockers,
@@ -134,10 +134,10 @@ function filmCard(f) {
   const oscarWins = f.oscar_wins && f.oscar_wins.length;
   const genreTags = (f.genres || []).slice(0, 2);
   return `
-  <div class="card" data-film="${f.id}">
+  <div class="card" data-film="${f.id}" role="button" tabindex="0" aria-label="${escapeAttr(f.title)}${f.year ? `, ${f.year}` : ""}">
     <div class="poster-wrap">
       ${posterImg(f)}
-      <div class="watch-toggle ${watched ? "watched" : ""}" data-toggle="${f.id}" title="${watched ? "Mark as unwatched" : "Mark as watched"}">✓</div>
+      <div class="watch-toggle ${watched ? "watched" : ""}" data-toggle="${f.id}" role="button" tabindex="0" aria-pressed="${watched}" aria-label="${watched ? "Mark as unwatched" : "Mark as watched"}" title="${watched ? "Mark as unwatched" : "Mark as watched"}">✓</div>
       ${oscarWins ? `<div class="oscar-badge">🏆 ${f.oscar_wins.length}</div>` : ""}
     </div>
     <div class="meta">
@@ -151,11 +151,24 @@ function filmCard(f) {
 function attachCardHandlers(root) {
   root.querySelectorAll("[data-film]").forEach((el) => {
     el.addEventListener("click", () => openDetail(el.dataset.film));
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openDetail(el.dataset.film);
+      }
+    });
   });
   root.querySelectorAll("[data-toggle]").forEach((el) => {
     el.addEventListener("click", (e) => {
       e.stopPropagation();
       toggleWatched(el.dataset.toggle);
+    });
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleWatched(el.dataset.toggle);
+      }
     });
   });
 }
@@ -304,14 +317,15 @@ function renderCeremony(ceremonyNum) {
         ${cat.winners.map((w) => {
           const f = w.film_id ? filmsById.get(w.film_id) : null;
           const thumb = f && f.poster ? `<img class="thumb" src="${escapeAttr(f.poster)}" loading="lazy">` : `<div class="thumb"></div>`;
+          const watched = w.film_id ? isWatched(w.film_id) : false;
           return `
-          <div class="winner-row" ${w.film_id ? `data-film="${w.film_id}"` : ""}>
+          <div class="winner-row" ${w.film_id ? `data-film="${w.film_id}" role="button" tabindex="0" aria-label="${escapeAttr(w.film_title || w.winner_name)}"` : ""}>
             ${thumb}
             <div class="wtext">
               <div class="wname">${escapeHtml(w.winner_name)}</div>
               <div class="wfilm">${escapeHtml(w.film_title || "")}</div>
             </div>
-            ${w.film_id ? `<div class="watch-toggle ${isWatched(w.film_id) ? "watched" : ""}" data-toggle="${w.film_id}" style="position:static;flex-shrink:0" title="Mark watched">✓</div>` : ""}
+            ${w.film_id ? `<div class="watch-toggle ${watched ? "watched" : ""}" data-toggle="${w.film_id}" role="button" tabindex="0" aria-pressed="${watched}" style="position:static;flex-shrink:0" aria-label="${watched ? "Mark as unwatched" : "Mark as watched"}" title="Mark watched">✓</div>` : ""}
           </div>`;
         }).join("")}
       </div>
