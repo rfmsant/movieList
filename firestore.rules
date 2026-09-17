@@ -1,10 +1,15 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Only this one document (your watched-list) is reachable at all.
-    // Everything else in the database is denied by default.
-    match /state/watched {
+    // One watched-list document per person (named by their URL, e.g. ?maria).
+    match /state/{name} {
       allow read, write: if true;
     }
+    // AI-generated film analysis — shared by everyone, cached forever once
+    // written so the same film is never re-queried.
+    match /analysis/{filmId} {
+      allow read, write: if true;
+    }
+    // Everything else is denied by default.
   }
 }

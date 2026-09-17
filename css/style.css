@@ -40,11 +40,21 @@ a { color: inherit; text-decoration: none; }
   gap: 12px;
 }
 .brand { font-weight: 700; font-size: 1.05rem; white-space: nowrap; }
-.tabs { display: flex; gap: 4px; }
+.profile-tag {
+  font-weight: 500; font-size: 0.72rem; color: var(--accent);
+  background: var(--bg-card); border: 1px solid var(--border);
+  padding: 2px 7px; border-radius: 999px; margin-left: 6px; vertical-align: middle;
+}
+.tabs { display: flex; gap: 4px; align-items: center; }
 .tabs a {
   padding: 8px 12px; border-radius: 8px; font-size: 0.92rem; color: var(--text-dim);
 }
 .tabs a.active { background: var(--bg-card); color: var(--accent); }
+#random-btn {
+  background: var(--bg-card); border: 1px solid var(--border); color: var(--text);
+  font-size: 1rem; padding: 6px 10px; border-radius: 8px; cursor: pointer; margin-left: 2px;
+}
+#random-btn:active { transform: scale(0.95); }
 
 main#app {
   max-width: var(--max-width);
@@ -115,13 +125,19 @@ main#app {
 .card .meta { padding: 8px 9px; }
 .card .title { font-size: 0.83rem; font-weight: 600; line-height: 1.25; margin: 0 0 2px; }
 .card .year { font-size: 0.75rem; color: var(--text-dim); }
-.watched-badge {
-  position: absolute; top: 6px; right: 6px;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--good); color: #fff;
+.watch-toggle {
+  position: absolute; top: 6px; right: 6px; z-index: 2;
+  width: 24px; height: 24px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.78rem; box-shadow: 0 1px 4px rgba(0,0,0,.4);
+  font-size: 0.78rem; box-shadow: 0 1px 4px rgba(0,0,0,.5);
+  border: 1.5px solid rgba(255,255,255,0.7);
+  background: rgba(0,0,0,0.35); color: transparent;
+  cursor: pointer; transition: background .12s, color .12s;
 }
+.watch-toggle.watched {
+  background: var(--good); color: #fff; border-color: var(--good);
+}
+.watch-toggle:active { transform: scale(0.9); }
 .oscar-badge {
   position: absolute; top: 6px; left: 6px;
   background: rgba(212,162,76,0.92); color: #241a05;
@@ -213,6 +229,36 @@ p.subtle { color: var(--text-dim); font-size: 0.9rem; }
 .spoiler-warning { font-size: 0.75rem; color: var(--text-dim); margin-top: -4px; margin-bottom: 10px; }
 
 .pending-note { font-size: 0.8rem; color: var(--text-dim); font-style: italic; }
+
+.ask-claude-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-radius: 999px; border: 1px solid var(--accent-dim);
+  background: rgba(212,162,76,0.12); color: var(--accent);
+  font-size: 0.88rem; cursor: pointer; margin-top: 4px;
+}
+.ask-claude-btn:disabled { opacity: 0.6; cursor: default; }
+.spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(212,162,76,0.3); border-top-color: var(--accent);
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Random picker ---------- */
+.random-picker h2 { margin-top: 0; }
+.random-picker .controls { margin-bottom: 18px; }
+.random-picker .controls select { flex: 1 1 140px; }
+.go-btn {
+  width: 100%; padding: 12px; border-radius: var(--radius); border: none;
+  background: var(--accent); color: #241a05; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+}
+
+/* ---------- Share box ---------- */
+.share-box {
+  background: var(--bg-card); border: 1px dashed var(--border); border-radius: var(--radius);
+  padding: 12px 14px; font-size: 0.82rem; color: var(--text-dim); margin-bottom: 18px;
+}
+.share-box code { color: var(--accent); word-break: break-all; }
 
 /* ---------- Stats ---------- */
 .stat-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; margin-bottom: 20px; }

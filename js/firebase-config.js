@@ -2,10 +2,13 @@
 //
 // The apiKey below is NOT a secret — Firebase web config is meant to be
 // public (it just identifies the project). Actual access control lives in
-// Firestore Security Rules (see /firestore.rules in this repo), which only
-// allow reading/writing the single "state/watched" document used by this
-// app. If you ever want stronger protection, add Firebase Authentication
-// and rules keyed to a signed-in user instead.
+// Firestore Security Rules (see /firestore.rules in this repo).
+//
+// Each person gets their own watched-list by visiting the site with their
+// name as a bare query param, e.g. https://.../?maria — no "=" needed.
+// With no name given, it defaults to "rui". Everyone shares the same
+// films/oscars data and the same AI-generated analysis cache; only the
+// watched-status document is per-person.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
@@ -28,7 +31,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
-const WATCHED_DOC = doc(db, "state", "watched");
+// ---------------------------------------------------------------- profile
+function resolveProfileName() {
+  const params = new URLSearchParams(location.search);
+  const keys = [...params.keys()].filter(Boolean);
+  const raw = (keys[0] || "rui").toLowerCase();
+  const clean = raw.replace(/[^a-z0-9_-]/g, "").slice(0, 30);
+  return clean || "rui";
+}
+export const PROFILE = resolveProfileName();
+
+const WATCHED_DOC = doc(db, "state", PROFILE);
 
 // In-memory cache of { [filmId]: true } — kept in sync with Firestore.
 let watchedCache = {};
@@ -49,16 +62,20 @@ export function isWatched(filmId) {
   return !!watchedCache[filmId];
 }
 
-export async function toggleWatched(filmId) {
-  const next = !watchedCache[filmId];
-  watchedCache = { ...watchedCache, [filmId]: next };
-  if (!next) delete watchedCache[filmId];
+export async function setWatched(filmId, value) {
+  watchedCache = { ...watchedCache };
+  if (value) watchedCache[filmId] = true;
+  else delete watchedCache[filmId];
   notify();
   try {
     await setDoc(WATCHED_DOC, watchedCache);
   } catch (e) {
     console.error("Failed to save watched state to Firebase:", e);
   }
+}
+
+export async function toggleWatched(filmId) {
+  return setWatched(filmId, !watchedCache[filmId]);
 }
 
 // Live-sync across tabs/devices.
@@ -82,4 +99,21 @@ export async function ensureWatchedLoaded() {
   watchedCache = snap.exists() ? snap.data() : {};
   ready = true;
   return watchedCache;
+}
+
+// ---------------------------------------------------------------- analysis
+// Shared across everyone (not per-profile) — one AI-generated write-up per
+// film, cached forever once generated so it's never paid for twice.
+export async function getAnalysis(filmId) {
+  try {
+    const snap = await getDoc(doc(db, "analysis", filmId));
+    return snap.exists() ? snap.data() : null;
+  } catch (e) {
+    console.error("Failed to read analysis from Firebase:", e);
+    return null;
+  }
+}
+
+export async function saveAnalysis(filmId, data) {
+  await setDoc(doc(db, "analysis", filmId), { ...data, generated_at: Date.now() });
 }

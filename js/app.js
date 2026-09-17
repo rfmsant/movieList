@@ -1,15 +1,37 @@
+// --- Ask-Claude Worker config -------------------------------------------
+// WORKER_URL is filled in after you deploy the Cloudflare Worker in
+// /worker (see README.md). APP_SECRET must match the APP_SECRET secret set
+// on that Worker — it's not truly private (anyone can read it from this
+// file) but it stops casual strangers who find the site from burning your
+// API budget without at least looking at the page source.
+const WORKER_URL = "https://cinema-analysis.YOUR-SUBDOMAIN.workers.dev";
+const APP_SECRET = "Fblq3PlqmlKQ3ntT7MyRnyCkDGofLYhX";
+
 // Firebase is loaded dynamically so a blocked/offline network (ad-blockers,
 // no connectivity, etc.) degrades gracefully to "browsing works, watched
 // status just isn't saved" instead of a blank white screen.
 let watchedApi = {
   isWatched: () => false,
+  setWatched: async () => {},
   toggleWatched: async () => {},
   onWatchedChange: () => () => {},
   ensureWatchedLoaded: async () => ({}),
+  getAnalysis: async () => null,
+  saveAnalysis: async () => {},
+  PROFILE: resolveProfileName(),
 };
 let firebaseOk = false;
 
+function resolveProfileName() {
+  const params = new URLSearchParams(location.search);
+  const keys = [...params.keys()].filter(Boolean);
+  const raw = (keys[0] || "rui").toLowerCase();
+  const clean = raw.replace(/[^a-z0-9_-]/g, "").slice(0, 30);
+  return clean || "rui";
+}
+
 function isWatched(id) { return watchedApi.isWatched(id); }
+function setWatched(id, val) { return watchedApi.setWatched(id, val); }
 function toggleWatched(id) { return watchedApi.toggleWatched(id); }
 
 let films = [];
@@ -37,6 +59,10 @@ async function init() {
   document.getElementById("detail-overlay").addEventListener("click", (e) => {
     if (e.target.id === "detail-overlay") closeDetail();
   });
+  document.getElementById("random-btn").addEventListener("click", openRandomPicker);
+
+  const tag = document.getElementById("profile-tag");
+  tag.textContent = `👤 ${watchedApi.PROFILE}`;
 
   // First paint immediately with whatever local watched-state we have
   // (none, until Firebase connects) so the UI never sits blank.
@@ -45,6 +71,7 @@ async function init() {
   try {
     const mod = await import("./firebase-config.js");
     watchedApi = mod;
+    tag.textContent = `👤 ${watchedApi.PROFILE}`;
     await watchedApi.ensureWatchedLoaded();
     firebaseOk = true;
     watchedApi.onWatchedChange(() => render());
@@ -109,7 +136,7 @@ function filmCard(f) {
   <div class="card" data-film="${f.id}">
     <div class="poster-wrap">
       ${posterImg(f)}
-      ${watched ? '<div class="watched-badge">✓</div>' : ""}
+      <div class="watch-toggle ${watched ? "watched" : ""}" data-toggle="${f.id}" title="${watched ? "Mark as unwatched" : "Mark as watched"}">✓</div>
       ${oscarWins ? `<div class="oscar-badge">🏆 ${f.oscar_wins.length}</div>` : ""}
     </div>
     <div class="meta">
@@ -123,6 +150,12 @@ function attachCardHandlers(root) {
   root.querySelectorAll("[data-film]").forEach((el) => {
     el.addEventListener("click", () => openDetail(el.dataset.film));
   });
+  root.querySelectorAll("[data-toggle]").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleWatched(el.dataset.toggle);
+    });
+  });
 }
 
 // ---------------------------------------------------------------- home
@@ -131,24 +164,29 @@ function renderHome() {
   const watched = watchedCount(films);
   const bp = films.filter((f) => (f.oscar_wins || []).some((w) => w.category === "Best Picture"));
   const bpWatched = watchedCount(bp);
+  const shareUrl = `${location.origin}${location.pathname}?friendname`;
 
   app.innerHTML = `
-    <h1 class="page-title">Welcome back</h1>
+    <h1 class="page-title">Welcome back${watchedApi.PROFILE !== "rui" ? `, ${escapeHtml(watchedApi.PROFILE)}` : ""}</h1>
     <p class="subtle">${watched} of ${total} films watched so far. Keep going.</p>
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-num">${watched}/${total}</div><div class="stat-label">All films</div></div>
       <div class="stat-card"><div class="stat-num">${bpWatched}/${bp.length}</div><div class="stat-label">Best Picture winners</div></div>
     </div>
+    <div class="share-box">
+      Each person has their own watched-list. Share <code>${escapeHtml(shareUrl)}</code> (swap in their name) and they'll get their own list, on the same site.
+    </div>
     <h2 class="section-title">Jump in</h2>
     <div class="chip-row">
       <a href="#/classics" class="chip">📚 Browse the classics</a>
       <a href="#/oscars" class="chip">🏆 Browse the Oscars</a>
-      <a href="#/classics?unwatched=1" class="chip">🎯 What should I watch next?</a>
+      <div class="chip" id="home-random">🎲 Surprise me</div>
     </div>
     <h2 class="section-title">Recently added</h2>
     <div class="grid">${films.slice(0, 12).map(filmCard).join("")}</div>
   `;
   attachCardHandlers(app);
+  document.getElementById("home-random").addEventListener("click", openRandomPicker);
 }
 
 // ---------------------------------------------------------------- classics
@@ -165,7 +203,7 @@ function renderClassics() {
 
   app.innerHTML = `
     <h1 class="page-title">Classics</h1>
-    <p class="subtle">The essential canon — 1,158 films from the "1001 Movies" list, plus every other Oscar-winning film.</p>
+    <p class="subtle">The essential canon — 1,158 films from the "1001 Movies" list, plus every other Oscar-winning film. Tap the ✓ on a poster to mark it watched without opening it.</p>
     <div class="controls">
       <input type="search" id="q" placeholder="Search title..." value="${escapeAttr(classicsState.q)}">
       <select id="decade"><option value="">All decades</option>${decades.map((d) => `<option value="${d}" ${classicsState.decade == d ? "selected" : ""}>${d}s</option>`).join("")}</select>
@@ -262,6 +300,7 @@ function renderCeremony(ceremonyNum) {
               <div class="wname">${escapeHtml(w.winner_name)}</div>
               <div class="wfilm">${escapeHtml(w.film_title || "")}</div>
             </div>
+            ${w.film_id ? `<div class="watch-toggle ${isWatched(w.film_id) ? "watched" : ""}" data-toggle="${w.film_id}" style="position:static;flex-shrink:0" title="Mark watched">✓</div>` : ""}
           </div>`;
         }).join("")}
       </div>
@@ -291,14 +330,88 @@ function renderStats() {
   attachCardHandlers(app);
 }
 
+// ---------------------------------------------------------------- random picker
+function openRandomPicker() {
+  const decades = [...new Set(films.map((f) => decadeOf(f.year)).filter(Boolean))].sort((a, b) => a - b);
+  const genres = [...new Set(films.flatMap((f) => f.genres || []))].sort();
+
+  panel.innerHTML = `
+    <div class="detail-close"><button id="close-detail">✕</button></div>
+    <div class="detail-body random-picker" style="padding-top:6px">
+      <h2>🎲 Surprise me</h2>
+      <p class="subtle">Pick a filter or leave it on "Any" for a totally random classic.</p>
+      <div class="controls">
+        <select id="rp-decade"><option value="">Any decade</option>${decades.map((d) => `<option value="${d}">${d}s</option>`).join("")}</select>
+        <select id="rp-genre"><option value="">Any genre</option>${genres.map((g) => `<option value="${escapeAttr(g)}">${escapeHtml(g)}</option>`).join("")}</select>
+      </div>
+      <div class="chip-row">
+        <div class="chip active" data-w="any" id="rp-w-any">Any</div>
+        <div class="chip" data-w="unwatched" id="rp-w-unwatched">Unwatched only</div>
+      </div>
+      <button class="go-btn" id="rp-go">Pick a film</button>
+      <p class="empty-state" id="rp-empty" style="display:none">No films match those filters — try loosening them.</p>
+    </div>
+  `;
+  overlay.classList.remove("hidden");
+  document.getElementById("close-detail").addEventListener("click", closeDetail);
+
+  let wantUnwatchedOnly = false;
+  document.getElementById("rp-w-any").addEventListener("click", (e) => {
+    wantUnwatchedOnly = false;
+    document.querySelectorAll("#rp-w-any, #rp-w-unwatched").forEach((el) => el.classList.remove("active"));
+    e.target.classList.add("active");
+  });
+  document.getElementById("rp-w-unwatched").addEventListener("click", (e) => {
+    wantUnwatchedOnly = true;
+    document.querySelectorAll("#rp-w-any, #rp-w-unwatched").forEach((el) => el.classList.remove("active"));
+    e.target.classList.add("active");
+  });
+
+  document.getElementById("rp-go").addEventListener("click", () => {
+    const decade = document.getElementById("rp-decade").value;
+    const genre = document.getElementById("rp-genre").value;
+    const pool = films.filter((f) => {
+      if (decade && decadeOf(f.year) != decade) return false;
+      if (genre && !(f.genres || []).includes(genre)) return false;
+      if (wantUnwatchedOnly && isWatched(f.id)) return false;
+      return true;
+    });
+    if (!pool.length) {
+      document.getElementById("rp-empty").style.display = "block";
+      return;
+    }
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    openDetail(pick.id);
+  });
+}
+
 // ---------------------------------------------------------------- detail
-function openDetail(filmId) {
+async function openDetail(filmId) {
   const f = filmsById.get(filmId);
   if (!f) return;
+  renderDetailPanel(f, null);
+  overlay.classList.remove("hidden");
+
+  const hasStaticContent = !!(f.why_iconic || f.hidden_analysis);
+  if (!hasStaticContent && firebaseOk) {
+    try {
+      const cached = await watchedApi.getAnalysis(f.id);
+      if (cached) renderDetailPanel(f, cached);
+    } catch (e) {
+      console.warn("Could not check cached analysis:", e);
+    }
+  }
+}
+
+function renderDetailPanel(f, analysis) {
   const watched = isWatched(f.id);
   const oscarLines = (f.oscar_wins || [])
     .map((w) => `${w.category} (${w.year_ceremony})`)
     .join(" · ");
+  const whyIconic = f.why_iconic || analysis?.why_iconic || "";
+  const hiddenAnalysis = f.hidden_analysis || analysis?.hidden_analysis || "";
+  const funFacts = (f.fun_facts && f.fun_facts.length ? f.fun_facts : analysis?.fun_facts) || [];
+  const hasContent = !!(whyIconic || hiddenAnalysis);
 
   panel.innerHTML = `
     <div class="detail-close"><button id="close-detail">✕</button></div>
@@ -321,34 +434,82 @@ function openDetail(filmId) {
 
       <div class="detail-section">
         <h3>About this film</h3>
-        ${f.why_iconic || f.synopsis
-          ? `<p>${escapeHtml(f.why_iconic || f.synopsis)}</p>`
+        ${whyIconic
+          ? `<p>${escapeHtml(whyIconic)}</p>`
           : `<p class="pending-note">Non-spoiler write-up for this one hasn't been added yet.</p>`}
       </div>
 
+      ${hasContent ? `
       <button class="spoiler-toggle" id="spoiler-toggle">🔒 Show deep analysis (contains spoilers)</button>
       <p class="spoiler-warning" style="display:none" id="spoiler-warning">Only tap this after watching — full plot and ending discussed below.</p>
       <div class="spoiler-body" id="spoiler-body">
-        ${f.hidden_analysis
-          ? `<p>${escapeHtml(f.hidden_analysis)}</p>`
-          : `<p class="pending-note">Deep analysis for this one hasn't been written yet.</p>`}
+        <p>${escapeHtml(hiddenAnalysis)}</p>
       </div>
+      ` : `
+      <div class="detail-section">
+        <h3>Deep analysis</h3>
+        <p class="pending-note" id="ask-pending">Nobody's asked for this one yet.</p>
+        <button class="ask-claude-btn" id="ask-claude-btn">🤖 Ask Claude to write it up</button>
+      </div>
+      `}
 
-      ${f.fun_facts && f.fun_facts.length ? `
+      ${funFacts.length ? `
       <div class="detail-section" style="margin-top:16px">
         <h3>Fun facts</h3>
-        <ul class="fun-facts">${f.fun_facts.map((ff) => `<li>${escapeHtml(ff)}</li>`).join("")}</ul>
+        <ul class="fun-facts">${funFacts.map((ff) => `<li>${escapeHtml(ff)}</li>`).join("")}</ul>
       </div>` : ""}
     </div>
   `;
 
-  overlay.classList.remove("hidden");
   document.getElementById("close-detail").addEventListener("click", closeDetail);
   document.getElementById("watch-btn").addEventListener("click", () => toggleWatched(f.id));
-  document.getElementById("spoiler-toggle").addEventListener("click", () => {
-    document.getElementById("spoiler-body").classList.toggle("open");
-    document.getElementById("spoiler-warning").style.display = "block";
-  });
+  const spoilerToggle = document.getElementById("spoiler-toggle");
+  if (spoilerToggle) {
+    spoilerToggle.addEventListener("click", () => {
+      document.getElementById("spoiler-body").classList.toggle("open");
+      document.getElementById("spoiler-warning").style.display = "block";
+    });
+  }
+  const askBtn = document.getElementById("ask-claude-btn");
+  if (askBtn) askBtn.addEventListener("click", () => handleAskClaude(f));
+}
+
+async function handleAskClaude(f) {
+  const btn = document.getElementById("ask-claude-btn");
+  const pending = document.getElementById("ask-pending");
+  if (!btn) return;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Thinking… (a few seconds)`;
+  if (pending) pending.textContent = "";
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-app-secret": APP_SECRET },
+      body: JSON.stringify({
+        title: f.title,
+        year: f.year,
+        director: f.director,
+        cast: f.cast,
+        genres: f.genres,
+        country: f.country,
+        oscar_wins: f.oscar_wins,
+        synopsis: f.synopsis,
+      }),
+    });
+    if (!res.ok) throw new Error(`Worker returned ${res.status}`);
+    const analysis = await res.json();
+    if (firebaseOk) {
+      try { await watchedApi.saveAnalysis(f.id, analysis); }
+      catch (e) { console.warn("Could not cache analysis to Firestore:", e); }
+    }
+    renderDetailPanel(f, analysis);
+  } catch (e) {
+    console.error("Ask Claude failed:", e);
+    btn.disabled = false;
+    btn.innerHTML = "🤖 Ask Claude to write it up";
+    showToast("Couldn't reach the analysis service — try again in a moment.");
+  }
 }
 
 function closeDetail() {
