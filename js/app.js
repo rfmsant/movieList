@@ -408,6 +408,7 @@ function renderDetailPanel(f, analysis) {
   const oscarLines = (f.oscar_wins || [])
     .map((w) => `${w.category} (${w.year_ceremony})`)
     .join(" · ");
+  const synopsis = f.synopsis || "";
   const whyIconic = f.why_iconic || analysis?.why_iconic || "";
   const hiddenAnalysis = f.hidden_analysis || analysis?.hidden_analysis || "";
   const funFacts = (f.fun_facts && f.fun_facts.length ? f.fun_facts : analysis?.fun_facts) || [];
@@ -434,9 +435,13 @@ function renderDetailPanel(f, analysis) {
 
       <div class="detail-section">
         <h3>About this film</h3>
+        ${synopsis ? `<p>${escapeHtml(synopsis)}</p>` : ""}
         ${whyIconic
-          ? `<p>${escapeHtml(whyIconic)}</p>`
-          : `<p class="pending-note">Non-spoiler write-up for this one hasn't been added yet.</p>`}
+          ? `<p class="why-iconic">🎬 ${escapeHtml(whyIconic)}</p>`
+          : ""}
+        ${!synopsis && !whyIconic
+          ? `<p class="pending-note">No write-up for this one yet.</p>`
+          : ""}
       </div>
 
       ${hasContent ? `
