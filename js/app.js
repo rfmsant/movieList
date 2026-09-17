@@ -113,6 +113,12 @@ const panel = document.getElementById("detail-panel");
 
 init();
 
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch((e) => console.warn("SW registration failed:", e));
+  });
+}
+
 async function init() {
   const [filmsRes, oscarsRes] = await Promise.all([
     fetch("data/films.json"),
