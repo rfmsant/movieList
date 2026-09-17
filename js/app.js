@@ -4,7 +4,7 @@
 // on that Worker — it's not truly private (anyone can read it from this
 // file) but it stops casual strangers who find the site from burning your
 // API budget without at least looking at the page source.
-const WORKER_URL = "https://cinema-analysis.YOUR-SUBDOMAIN.workers.dev";
+const WORKER_URL = "https://white-resonance-78cf.movies-787.workers.dev";
 const APP_SECRET = "Fblq3PlqmlKQ3ntT7MyRnyCkDGofLYhX";
 
 // Firebase is loaded dynamically so a blocked/offline network (ad-blockers,
