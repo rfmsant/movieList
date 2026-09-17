@@ -21,30 +21,21 @@ Source: "Deploy from a branch" → Branch `main`, folder `/ (root)`.
 
 **4. Set up the "Ask Claude" analysis Worker** (optional, but this is what
 powers the button that writes up a film's deep analysis on demand). This is a
-separate small project (`rfmsant/cinema-worker`) with a one-click deploy
-button, so there's no dashboard-clicking or code-pasting needed:
+separate small project ([`cinema-worker`](https://github.com/rfmsant/cinema-worker)):
 
   a. Get an Anthropic API key at [console.anthropic.com](https://console.anthropic.com)
-     (Settings → API Keys). This is billed separately from your Claude.ai
-     subscription — usage-based, but each film write-up costs a fraction of a
+     (Settings -> API Keys). This is billed separately from your Claude.ai
+     subscription - usage-based, but each film write-up costs a fraction of a
      cent, so normal use stays well under a dollar.
 
-  b. Open the [`cinema-worker`](https://github.com/rfmsant/cinema-worker) repo
-     and click its **Deploy to Cloudflare** button. Sign in (or sign up —
-     free, no card needed) to Cloudflare when prompted.
+  b. Follow the setup steps in the
+     [cinema-worker README](https://github.com/rfmsant/cinema-worker) - a
+     short manual Cloudflare dashboard setup (create a Worker, paste in its
+     code, add two secrets).
 
-  c. On the deploy screen it'll ask for two values: paste your Anthropic key
-     from step a into `ANTHROPIC_API_KEY`, and leave `APP_SECRET` as the
-     value it comes pre-filled with (it already matches the site's code).
-     Click Deploy.
-
-  d. Copy the resulting URL (looks like
+  c. Copy the resulting URL (looks like
      `https://cinema-analysis.<your-subdomain>.workers.dev`) and paste it in
      as `WORKER_URL` at the top of `js/app.js`, then push that change.
-
-Until step 4 is done, the "Ask Claude" button will just show a "couldn't
-reach the analysis service" message — everything else on the site works
-without it.
 
 ## Sharing with friends
 
