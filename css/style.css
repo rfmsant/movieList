@@ -125,6 +125,12 @@ main#app {
 .card .meta { padding: 8px 9px; }
 .card .title { font-size: 0.83rem; font-weight: 600; line-height: 1.25; margin: 0 0 2px; }
 .card .year { font-size: 0.75rem; color: var(--text-dim); }
+.genre-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.genre-tag {
+  font-size: 0.63rem; line-height: 1.4; color: var(--text-dim);
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 5px; padding: 1px 6px;
+}
 .watch-toggle {
   position: absolute; top: 6px; right: 6px; z-index: 2;
   width: 24px; height: 24px; border-radius: 50%;

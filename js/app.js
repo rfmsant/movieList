@@ -132,6 +132,7 @@ function escapeAttr(s) { return escapeHtml(s); }
 function filmCard(f) {
   const watched = isWatched(f.id);
   const oscarWins = f.oscar_wins && f.oscar_wins.length;
+  const genreTags = (f.genres || []).slice(0, 2);
   return `
   <div class="card" data-film="${f.id}">
     <div class="poster-wrap">
@@ -142,6 +143,7 @@ function filmCard(f) {
     <div class="meta">
       <p class="title">${escapeHtml(f.title)}</p>
       <p class="year">${f.year || "—"}</p>
+      ${genreTags.length ? `<div class="genre-tags">${genreTags.map((g) => `<span class="genre-tag">${escapeHtml(g)}</span>`).join("")}</div>` : ""}
     </div>
   </div>`;
 }
