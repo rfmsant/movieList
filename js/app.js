@@ -34,6 +34,74 @@ function isWatched(id) { return watchedApi.isWatched(id); }
 function setWatched(id, val) { return watchedApi.setWatched(id, val); }
 function toggleWatched(id) { return watchedApi.toggleWatched(id); }
 
+// ---------------------------------------------------------------- confetti
+const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function fireConfettiAt(x, y) {
+  if (prefersReducedMotion) return;
+  const canvas = document.createElement("canvas");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  Object.assign(canvas.style, {
+    position: "fixed", inset: "0", pointerEvents: "none", zIndex: "300",
+  });
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+
+  const colors = ["#d4a24c", "#e8c47f", "#4caf82", "#eef0f4", "#8a6b2e"];
+  const count = 46;
+  const particles = Array.from({ length: count }, () => {
+    const angle = Math.random() * Math.PI - Math.PI / 2 - Math.PI / 4; // upward-ish burst
+    const speed = 4 + Math.random() * 6;
+    return {
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 2,
+      size: 4 + Math.random() * 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * Math.PI * 2,
+      spin: (Math.random() - 0.5) * 0.3,
+      life: 1,
+    };
+  });
+
+  const gravity = 0.22;
+  const drag = 0.985;
+  let frame = 0;
+  const maxFrames = 70;
+
+  function tick() {
+    frame++;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const p of particles) {
+      p.vx *= drag;
+      p.vy = p.vy * drag + gravity;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rotation += p.spin;
+      p.life = Math.max(0, 1 - frame / maxFrames);
+      ctx.save();
+      ctx.globalAlpha = p.life;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      ctx.restore();
+    }
+    if (frame < maxFrames) {
+      requestAnimationFrame(tick);
+    } else {
+      canvas.remove();
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+function fireConfettiFromEl(el) {
+  const rect = el.getBoundingClientRect();
+  fireConfettiAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
+}
+
 let films = [];
 let filmsById = new Map();
 let oscars = [];
@@ -161,12 +229,16 @@ function attachCardHandlers(root) {
   root.querySelectorAll("[data-toggle]").forEach((el) => {
     el.addEventListener("click", (e) => {
       e.stopPropagation();
+      const wasWatched = isWatched(el.dataset.toggle);
+      if (!wasWatched) fireConfettiFromEl(el);
       toggleWatched(el.dataset.toggle);
     });
     el.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         e.stopPropagation();
+        const wasWatched = isWatched(el.dataset.toggle);
+        if (!wasWatched) fireConfettiFromEl(el);
         toggleWatched(el.dataset.toggle);
       }
     });
@@ -492,7 +564,10 @@ function renderDetailPanel(f, analysis) {
   `;
 
   document.getElementById("close-detail").addEventListener("click", closeDetail);
-  document.getElementById("watch-btn").addEventListener("click", () => toggleWatched(f.id));
+  document.getElementById("watch-btn").addEventListener("click", (e) => {
+    if (!isWatched(f.id)) fireConfettiFromEl(e.currentTarget);
+    toggleWatched(f.id);
+  });
   const spoilerToggle = document.getElementById("spoiler-toggle");
   if (spoilerToggle) {
     spoilerToggle.addEventListener("click", () => {
