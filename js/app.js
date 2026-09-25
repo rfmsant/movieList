@@ -4,7 +4,7 @@
 // on that Worker — it's not truly private (anyone can read it from this
 // file) but it stops casual strangers who find the site from burning your
 // API budget without at least looking at the page source.
-const WORKER_URL = "https://cinema-analysis.YOUR-SUBDOMAIN.workers.dev";
+const WORKER_URL = "https://white-resonance-78cf.movies-787.workers.dev";
 const APP_SECRET = "Fblq3PlqmlKQ3ntT7MyRnyCkDGofLYhX";
 
 // Firebase is loaded dynamically so a blocked/offline network (ad-blockers,
@@ -135,6 +135,19 @@ async function init() {
   });
   document.getElementById("random-btn").addEventListener("click", openRandomPicker);
 
+  const searchBtn = document.getElementById("search-btn");
+  const searchBar = document.getElementById("global-search-bar");
+  const searchInput = document.getElementById("global-search-input");
+  searchBtn.addEventListener("click", () => {
+    searchBar.classList.toggle("hidden");
+    if (!searchBar.classList.contains("hidden")) searchInput.focus();
+  });
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") goSearch(searchInput.value);
+    if (e.key === "Escape") { searchBar.classList.add("hidden"); searchInput.blur(); }
+  });
+  searchInput.addEventListener("search", () => goSearch(searchInput.value));
+
   const tag = document.getElementById("profile-tag");
   tag.textContent = `👤 ${watchedApi.PROFILE}`;
 
@@ -161,6 +174,14 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.remove("hidden");
   setTimeout(() => t.classList.add("hidden"), 4000);
+}
+
+function goSearch(q) {
+  classicsState.q = q.trim();
+  classicsState.filter = "all";
+  document.getElementById("global-search-bar").classList.add("hidden");
+  if (route().name === "classics") renderClassics();
+  else location.hash = "#/classics";
 }
 
 // ---------------------------------------------------------------- routing
@@ -275,20 +296,56 @@ function renderHome() {
       <a href="#/oscars" class="chip">🏆 Browse the Oscars</a>
       <div class="chip" id="home-random">🎲 Surprise me</div>
     </div>
-    <h2 class="section-title">🎲 Random picks</h2>
-    <div class="grid">${sampleFilms(10).map(filmCard).join("")}</div>
+    <h2 class="section-title">🎬 Today's picks</h2>
+    <p class="subtle" style="margin-top:-8px">4 unwatched films picked for today — same set all day, a fresh batch tomorrow.</p>
+    ${dailyPicksHtml()}
   `;
   attachCardHandlers(app);
   document.getElementById("home-random").addEventListener("click", openRandomPicker);
 }
 
-function sampleFilms(n) {
-  const copy = [...films];
+function dailyPicksHtml() {
+  const picks = dailyPicks(4);
+  if (!picks.length) {
+    return `<div class="empty-state">🎉 You've watched every film on the list. Incredible.</div>`;
+  }
+  return `<div class="grid">${picks.map(filmCard).join("")}</div>`;
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return h;
+}
+
+// Deterministic shuffle seeded from a number, so the same seed always
+// produces the same order (mulberry32 PRNG).
+function seededShuffle(arr, seed) {
+  let s = seed >>> 0;
+  const rand = () => {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const copy = [...arr];
   for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rand() * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
-  return copy.slice(0, n);
+  return copy;
+}
+
+function dailyPicks(n) {
+  const unwatched = films.filter((f) => !isWatched(f.id));
+  if (!unwatched.length) return [];
+  const seed = hashStr(`${todayKey()}|${watchedApi.PROFILE}`);
+  return seededShuffle(unwatched, seed).slice(0, n);
 }
 
 // ---------------------------------------------------------------- classics

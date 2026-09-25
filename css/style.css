@@ -107,6 +107,32 @@ p { text-wrap: pretty; }
 }
 #random-btn:hover { border-color: var(--border-hover); background: var(--bg-card-hover); }
 #random-btn:active { transform: scale(0.92); }
+#search-btn {
+  background: var(--bg-card); border: 1px solid var(--border); color: var(--text);
+  font-size: 1rem; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+  flex-shrink: 0; line-height: 1;
+  transition: transform .15s var(--ease-out), border-color .15s var(--ease-out), background .15s var(--ease-out);
+}
+#search-btn:hover { border-color: var(--border-hover); background: var(--bg-card-hover); }
+#search-btn:active { transform: scale(0.92); }
+
+.global-search-bar {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 calc(16px + var(--safe-left)) 12px calc(16px + var(--safe-right));
+}
+.global-search-bar.hidden { display: none; }
+.global-search-bar input[type="search"] {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 0.95rem;
+  transition: border-color .15s var(--ease-out);
+}
+.global-search-bar input[type="search"]:focus-visible { border-color: var(--accent); }
 
 @media (max-width: 480px) {
   .brand-text { display: none; }
