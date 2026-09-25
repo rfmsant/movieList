@@ -469,30 +469,14 @@ function renderClassicsResults() {
   const sorter = CLASSICS_SORTERS[classicsState.sort];
   if (sorter) list = [...list].sort(sorter);
 
-  const unwatchedInList = list.filter((f) => !isWatched(f.id));
   const results = document.getElementById("results");
   results.innerHTML = `
-    <div class="result-toolbar">
-      <p class="result-count">${list.length} film${list.length === 1 ? "" : "s"}</p>
-      ${unwatchedInList.length > 0 ? `<button class="bulk-watch-btn" id="bulk-watch-btn" type="button">✓ Mark all ${unwatchedInList.length} as watched</button>` : ""}
-    </div>
+    <p class="result-count">${list.length} film${list.length === 1 ? "" : "s"}</p>
     <div class="grid">${list.slice(0, 400).map(filmCard).join("")}</div>
     ${list.length > 400 ? `<p class="subtle" style="margin-top:12px">Showing first 400 — narrow your search to see more precisely.</p>` : ""}
     ${list.length === 0 ? `<div class="empty-state">No films match those filters.</div>` : ""}
   `;
   attachCardHandlers(results);
-
-  const bulkBtn = document.getElementById("bulk-watch-btn");
-  if (bulkBtn) {
-    bulkBtn.addEventListener("click", async () => {
-      const n = unwatchedInList.length;
-      if (!confirm(`Mark ${n} film${n === 1 ? "" : "s"} as watched? This can't be undone in bulk.`)) return;
-      bulkBtn.disabled = true;
-      bulkBtn.textContent = "Marking…";
-      await Promise.all(unwatchedInList.map((f) => setWatched(f.id, true)));
-      renderClassicsResults();
-    });
-  }
 }
 
 // ---------------------------------------------------------------- oscars
@@ -564,11 +548,23 @@ function breakdownRow(r) {
     </div>`;
 }
 
+function formatDuration(totalMinutes) {
+  const m = Math.round(totalMinutes || 0);
+  const days = Math.floor(m / 1440);
+  const hours = Math.floor((m % 1440) / 60);
+  const mins = m % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
+}
+
 function renderStats() {
   const total = films.length;
   const watched = watchedCount(films);
   const oneThousandOne = films.filter((f) => f.in_1001_list);
   const bp = films.filter((f) => (f.oscar_wins || []).some((w) => w.category === "Best Picture"));
+  const watchedMinutes = films.reduce((sum, f) => sum + (isWatched(f.id) ? (f.runtime_minutes || 0) : 0), 0);
+  const toGoMinutes = films.reduce((sum, f) => sum + (!isWatched(f.id) ? (f.runtime_minutes || 0) : 0), 0);
 
   const decadeGroups = {};
   films.forEach((f) => {
@@ -594,6 +590,8 @@ function renderStats() {
       <div class="stat-card"><div class="stat-num">${total - watched}</div><div class="stat-label">Still to watch</div></div>
       <div class="stat-card"><div class="stat-num">${watchedCount(oneThousandOne)}/${oneThousandOne.length}</div><div class="stat-label">1001 list</div></div>
       <div class="stat-card"><div class="stat-num">${watchedCount(bp)}/${bp.length}</div><div class="stat-label">Best Picture winners</div></div>
+      <div class="stat-card"><div class="stat-num">${formatDuration(watchedMinutes)}</div><div class="stat-label">Time watched</div></div>
+      <div class="stat-card"><div class="stat-num">${formatDuration(toGoMinutes)}</div><div class="stat-label">Time to go</div></div>
     </div>
 
     <h2 class="section-title">By decade</h2>
