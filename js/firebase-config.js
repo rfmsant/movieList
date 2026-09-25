@@ -101,6 +101,66 @@ export async function ensureWatchedLoaded() {
   return watchedCache;
 }
 
+// ---------------------------------------------------------------- shortlist
+// "Want to watch" list — same shape and pattern as the watched list above,
+// just a separate per-person document so the two stay independent.
+const SHORTLIST_DOC = doc(db, "shortlist", PROFILE);
+let shortlistCache = {};
+let shortlistReady = false;
+const shortlistListeners = new Set();
+
+function notifyShortlist() {
+  for (const fn of shortlistListeners) fn(shortlistCache);
+}
+
+export function onShortlistChange(fn) {
+  shortlistListeners.add(fn);
+  if (shortlistReady) fn(shortlistCache);
+  return () => shortlistListeners.delete(fn);
+}
+
+export function isShortlisted(filmId) {
+  return !!shortlistCache[filmId];
+}
+
+export async function setShortlisted(filmId, value) {
+  shortlistCache = { ...shortlistCache };
+  if (value) shortlistCache[filmId] = true;
+  else delete shortlistCache[filmId];
+  notifyShortlist();
+  try {
+    await setDoc(SHORTLIST_DOC, shortlistCache);
+  } catch (e) {
+    console.error("Failed to save shortlist to Firebase:", e);
+  }
+}
+
+export async function toggleShortlisted(filmId) {
+  return setShortlisted(filmId, !shortlistCache[filmId]);
+}
+
+onSnapshot(
+  SHORTLIST_DOC,
+  (snap) => {
+    shortlistCache = snap.exists() ? snap.data() : {};
+    shortlistReady = true;
+    notifyShortlist();
+  },
+  (err) => {
+    console.error("Firestore shortlist sync error:", err);
+    shortlistReady = true;
+    notifyShortlist();
+  }
+);
+
+export async function ensureShortlistLoaded() {
+  if (shortlistReady) return shortlistCache;
+  const snap = await getDoc(SHORTLIST_DOC);
+  shortlistCache = snap.exists() ? snap.data() : {};
+  shortlistReady = true;
+  return shortlistCache;
+}
+
 // ---------------------------------------------------------------- analysis
 // Shared across everyone (not per-profile) — one AI-generated write-up per
 // film, cached forever once generated so it's never paid for twice.

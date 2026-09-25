@@ -5,6 +5,10 @@ service cloud.firestore {
     match /state/{name} {
       allow read, write: if true;
     }
+    // One "want to watch" shortlist document per person, same pattern.
+    match /shortlist/{name} {
+      allow read, write: if true;
+    }
     // AI-generated film analysis — shared by everyone, cached forever once
     // written so the same film is never re-queried.
     match /analysis/{filmId} {

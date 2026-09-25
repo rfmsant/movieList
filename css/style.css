@@ -330,6 +330,18 @@ main#app {
   font-size: 0.68rem; font-weight: 700;
   padding: 2px 6px; border-radius: 6px;
 }
+.shortlist-toggle {
+  position: absolute; bottom: 6px; right: 6px; z-index: 2;
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; box-shadow: 0 1px 4px rgba(0,0,0,.5);
+  border: 1.5px solid rgba(255,255,255,0.7);
+  background: rgba(0,0,0,0.4);
+  cursor: pointer; transition: background .15s var(--ease-out), border-color .15s var(--ease-out), transform .15s var(--ease-out);
+}
+.shortlist-toggle:hover { border-color: #fff; transform: scale(1.08); }
+.shortlist-toggle.shortlisted { background: var(--accent); border-color: var(--accent); }
+.shortlist-toggle:active { transform: scale(0.9); }
 
 /* ---------- Section headers ---------- */
 h1.page-title { font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.6rem); margin: 4px 0 14px; letter-spacing: -0.01em; }
@@ -417,6 +429,21 @@ p.subtle { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; max-widt
 .watch-btn:active { transform: scale(0.97); }
 .watch-btn.watched { background: var(--good); border-color: var(--good); color: #fff; }
 
+.detail-actions-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.shortlist-btn {
+  padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--bg-card); color: var(--text); font-size: 0.85rem; cursor: pointer;
+  transition: background .15s var(--ease-out), border-color .15s var(--ease-out), transform .1s var(--ease-out);
+}
+.shortlist-btn:hover { border-color: var(--border-hover); }
+.shortlist-btn:active { transform: scale(0.97); }
+.shortlist-btn.active { background: var(--accent); border-color: var(--accent); color: #241a05; }
+.trailer-link {
+  font-size: 0.85rem; color: var(--accent-soft); white-space: nowrap;
+  padding: 8px 4px;
+}
+.trailer-link:hover { text-decoration: underline; }
+
 @media (min-width: 700px) {
   .detail-hero img, .detail-hero .no-poster { width: 140px; }
   .detail-title { font-size: 1.4rem; }
@@ -428,6 +455,14 @@ p.subtle { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; max-widt
 .detail-section p { font-size: 0.94rem; line-height: 1.6; margin: 0 0 8px; }
 .detail-section p:last-child { margin-bottom: 0; }
 .why-iconic { color: var(--accent-soft); }
+.provider-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.provider-row-label { font-size: 0.78rem; color: var(--text-dim); width: 44px; flex-shrink: 0; }
+.provider-badge {
+  font-size: 0.78rem; padding: 3px 9px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border); color: var(--text);
+}
+.provider-attribution { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; }
+.provider-attribution a { color: var(--text-dim); text-decoration: underline; }
 .fun-facts { padding-left: 18px; margin: 0; font-size: 0.9rem; line-height: 1.65; }
 .fun-facts li { margin-bottom: 4px; }
 

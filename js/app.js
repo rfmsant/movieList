@@ -16,6 +16,11 @@ let watchedApi = {
   toggleWatched: async () => {},
   onWatchedChange: () => () => {},
   ensureWatchedLoaded: async () => ({}),
+  isShortlisted: () => false,
+  setShortlisted: async () => {},
+  toggleShortlisted: async () => {},
+  onShortlistChange: () => () => {},
+  ensureShortlistLoaded: async () => ({}),
   getAnalysis: async () => null,
   saveAnalysis: async () => {},
   PROFILE: resolveProfileName(),
@@ -33,6 +38,8 @@ function resolveProfileName() {
 function isWatched(id) { return watchedApi.isWatched(id); }
 function setWatched(id, val) { return watchedApi.setWatched(id, val); }
 function toggleWatched(id) { return watchedApi.toggleWatched(id); }
+function isShortlisted(id) { return watchedApi.isShortlisted(id); }
+function toggleShortlisted(id) { return watchedApi.toggleShortlisted(id); }
 
 // ---------------------------------------------------------------- confetti
 const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -167,8 +174,10 @@ async function init() {
     watchedApi = mod;
     tag.textContent = `👤 ${watchedApi.PROFILE}`;
     await watchedApi.ensureWatchedLoaded();
+    await watchedApi.ensureShortlistLoaded();
     firebaseOk = true;
     watchedApi.onWatchedChange(() => render());
+    watchedApi.onShortlistChange(() => render());
     render();
   } catch (e) {
     console.warn("Firebase unavailable — watched status will not be saved.", e);
@@ -276,6 +285,7 @@ function escapeAttr(s) { return escapeHtml(s); }
 
 function filmCard(f) {
   const watched = isWatched(f.id);
+  const shortlisted = isShortlisted(f.id);
   const oscarWins = f.oscar_wins && f.oscar_wins.length;
   const genreTags = (f.genres || []).slice(0, 2);
   return `
@@ -283,6 +293,7 @@ function filmCard(f) {
     <div class="poster-wrap">
       ${posterImg(f)}
       <div class="watch-toggle ${watched ? "watched" : ""}" data-toggle="${f.id}" role="button" tabindex="0" aria-pressed="${watched}" aria-label="${watched ? "Mark as unwatched" : "Mark as watched"}" title="${watched ? "Mark as unwatched" : "Mark as watched"}">✓</div>
+      <div class="shortlist-toggle ${shortlisted ? "shortlisted" : ""}" data-shortlist="${f.id}" role="button" tabindex="0" aria-pressed="${shortlisted}" aria-label="${shortlisted ? "Remove from want-to-watch list" : "Add to want-to-watch list"}" title="${shortlisted ? "Remove from want-to-watch list" : "Add to want-to-watch list"}">🔖</div>
       ${oscarWins ? `<div class="oscar-badge">🏆 ${f.oscar_wins.length}</div>` : ""}
     </div>
     <div class="meta">
@@ -317,6 +328,19 @@ function attachCardHandlers(root) {
         const wasWatched = isWatched(el.dataset.toggle);
         if (!wasWatched) fireConfettiFromEl(el);
         toggleWatched(el.dataset.toggle);
+      }
+    });
+  });
+  root.querySelectorAll("[data-shortlist]").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleShortlisted(el.dataset.shortlist);
+    });
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleShortlisted(el.dataset.shortlist);
       }
     });
   });
@@ -431,6 +455,7 @@ function renderClassics() {
       <div class="chip ${classicsState.filter === "watched" ? "active" : ""}" data-f="watched">Watched</div>
       <div class="chip ${classicsState.filter === "1001" ? "active" : ""}" data-f="1001">1001 list only</div>
       <div class="chip ${classicsState.filter === "oscars" ? "active" : ""}" data-f="oscars">Oscar winners only</div>
+      <div class="chip ${classicsState.filter === "shortlist" ? "active" : ""}" data-f="shortlist">🔖 Want to watch</div>
     </div>
     <div id="results"></div>
   `;
@@ -464,6 +489,7 @@ function renderClassicsResults() {
     if (classicsState.filter === "watched" && !isWatched(f.id)) return false;
     if (classicsState.filter === "1001" && !f.in_1001_list) return false;
     if (classicsState.filter === "oscars" && !(f.oscar_wins || []).length) return false;
+    if (classicsState.filter === "shortlist" && !isShortlisted(f.id)) return false;
     return true;
   });
   const sorter = CLASSICS_SORTERS[classicsState.sort];
@@ -679,8 +705,33 @@ async function openDetail(filmId) {
   }
 }
 
+function watchProvidersHtml(f) {
+  const wp = f.watch_pt;
+  if (!wp) return "";
+  const flatrate = wp.flatrate || [];
+  const rent = wp.rent || [];
+  const buy = wp.buy || [];
+  const badge = (name) => `<span class="provider-badge">${escapeHtml(name)}</span>`;
+  if (!flatrate.length && !rent.length && !buy.length) {
+    return `
+      <div class="detail-section">
+        <h3>Where to watch (Portugal)</h3>
+        <p class="subtle">Not currently available to stream in Portugal.</p>
+      </div>`;
+  }
+  return `
+    <div class="detail-section">
+      <h3>Where to watch (Portugal)</h3>
+      ${flatrate.length ? `<div class="provider-row"><span class="provider-row-label">Stream</span>${flatrate.map(badge).join("")}</div>` : ""}
+      ${rent.length ? `<div class="provider-row"><span class="provider-row-label">Rent</span>${rent.map(badge).join("")}</div>` : ""}
+      ${buy.length ? `<div class="provider-row"><span class="provider-row-label">Buy</span>${buy.map(badge).join("")}</div>` : ""}
+      ${wp.link ? `<p class="provider-attribution">Data via <a href="${escapeAttr(wp.link)}" target="_blank" rel="noopener">JustWatch</a></p>` : ""}
+    </div>`;
+}
+
 function renderDetailPanel(f, analysis) {
   const watched = isWatched(f.id);
+  const shortlisted = isShortlisted(f.id);
   const oscarLines = (f.oscar_wins || [])
     .map((w) => `${w.category} (${w.year_ceremony})`)
     .join(" · ");
@@ -689,6 +740,7 @@ function renderDetailPanel(f, analysis) {
   const hiddenAnalysis = f.hidden_analysis || analysis?.hidden_analysis || "";
   const funFacts = (f.fun_facts && f.fun_facts.length ? f.fun_facts : analysis?.fun_facts) || [];
   const hasContent = !!(whyIconic || hiddenAnalysis);
+  const trailerUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${f.title}${f.year ? " " + f.year : ""} trailer`)}`;
 
   panel.innerHTML = `
     <div class="detail-close"><button id="close-detail">✕</button></div>
@@ -700,9 +752,15 @@ function renderDetailPanel(f, analysis) {
         ${f.genres && f.genres.length ? `<p class="detail-sub">${f.genres.map(escapeHtml).join(", ")}</p>` : ""}
         ${oscarLines ? `<p class="detail-oscars">🏆 ${escapeHtml(oscarLines)}</p>` : ""}
         <button id="watch-btn" class="watch-btn ${watched ? "watched" : ""}">${watched ? "✓ Watched" : "Mark as watched"}</button>
+        <div class="detail-actions-row">
+          <button id="shortlist-btn" class="shortlist-btn ${shortlisted ? "active" : ""}" aria-pressed="${shortlisted}">${shortlisted ? "🔖 On your list" : "🔖 Want to watch"}</button>
+          <a class="trailer-link" href="${trailerUrl}" target="_blank" rel="noopener">▶ Trailer</a>
+        </div>
       </div>
     </div>
     <div class="detail-body">
+      ${watchProvidersHtml(f)}
+
       ${f.cast && f.cast.length ? `
       <div class="detail-section">
         <h3>Cast</h3>
@@ -746,6 +804,14 @@ function renderDetailPanel(f, analysis) {
   document.getElementById("watch-btn").addEventListener("click", (e) => {
     if (!isWatched(f.id)) fireConfettiFromEl(e.currentTarget);
     toggleWatched(f.id);
+  });
+  document.getElementById("shortlist-btn").addEventListener("click", (e) => {
+    const btn = e.currentTarget;
+    const next = !isShortlisted(f.id);
+    toggleShortlisted(f.id);
+    btn.classList.toggle("active", next);
+    btn.setAttribute("aria-pressed", String(next));
+    btn.textContent = next ? "🔖 On your list" : "🔖 Want to watch";
   });
   const spoilerToggle = document.getElementById("spoiler-toggle");
   if (spoilerToggle) {
