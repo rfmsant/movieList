@@ -163,7 +163,7 @@ async function init() {
   });
 
   const tag = document.getElementById("profile-tag");
-  tag.textContent = `👤 ${watchedApi.PROFILE}`;
+  tag.innerHTML = `${icon("user", 12)} ${escapeHtml(watchedApi.PROFILE)}`;
 
   // First paint immediately with whatever local watched-state we have
   // (none, until Firebase connects) so the UI never sits blank.
@@ -172,7 +172,7 @@ async function init() {
   try {
     const mod = await import("./firebase-config.js");
     watchedApi = mod;
-    tag.textContent = `👤 ${watchedApi.PROFILE}`;
+    tag.innerHTML = `${icon("user", 12)} ${escapeHtml(watchedApi.PROFILE)}`;
     await watchedApi.ensureWatchedLoaded();
     await watchedApi.ensureShortlistLoaded();
     firebaseOk = true;
@@ -283,6 +283,30 @@ function escapeHtml(s) {
 }
 function escapeAttr(s) { return escapeHtml(s); }
 
+// ---------------------------------------------------------------- icons
+// A small hand-drawn line-icon set (24x24, stroke-based) so the UI doesn't
+// lean on emoji for its chrome — emoji render inconsistently across
+// platforms and read as a placeholder rather than a designed icon.
+const ICONS = {
+  film: `<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.3"/><circle cx="12" cy="4.7" r="1.2"/><circle cx="12" cy="19.3" r="1.2"/><circle cx="19.3" cy="12" r="1.2"/><circle cx="4.7" cy="12" r="1.2"/><circle cx="17.1" cy="6.9" r="1.2"/><circle cx="6.9" cy="17.1" r="1.2"/><circle cx="17.1" cy="17.1" r="1.2"/><circle cx="6.9" cy="6.9" r="1.2"/>`,
+  shuffle: `<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.3" fill="currentColor" stroke="none"/>`,
+  search: `<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>`,
+  x: `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>`,
+  check: `<polyline points="20 6 9 17 4 12"/>`,
+  award: `<polygon points="12,2 14.7,8.6 22,9.3 16.5,14 18.2,21 12,17.3 5.8,21 7.5,14 2,9.3 9.3,8.6"/>`,
+  bookmark: `<path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>`,
+  lock: `<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>`,
+  play: `<polygon points="5,3 19,12 5,21"/>`,
+  user: `<circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>`,
+  sparkle: `<polygon points="12,2 14,9 21,11 14,13 12,20 10,13 3,11 10,9"/><polygon points="19,3 19.6,4.6 21.2,5.2 19.6,5.8 19,7.4 18.4,5.8 16.8,5.2 18.4,4.6" fill="currentColor" stroke="none"/>`,
+  books: `<rect x="3" y="7" width="4" height="14" rx="1"/><rect x="9" y="3" width="4" height="18" rx="1"/><rect x="15" y="9" width="4" height="12" rx="1"/>`,
+};
+
+function icon(name, size = 16, extraClass = "") {
+  const body = ICONS[name] || "";
+  return `<svg class="icon${extraClass ? " " + extraClass : ""}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+}
+
 function filmCard(f) {
   const watched = isWatched(f.id);
   const shortlisted = isShortlisted(f.id);
@@ -292,9 +316,9 @@ function filmCard(f) {
   <div class="card" data-film="${f.id}" role="button" tabindex="0" aria-label="${escapeAttr(f.title)}${f.year ? `, ${f.year}` : ""}">
     <div class="poster-wrap">
       ${posterImg(f)}
-      <div class="watch-toggle ${watched ? "watched" : ""}" data-toggle="${f.id}" role="button" tabindex="0" aria-pressed="${watched}" aria-label="${watched ? "Mark as unwatched" : "Mark as watched"}" title="${watched ? "Mark as unwatched" : "Mark as watched"}">✓</div>
-      <div class="shortlist-toggle ${shortlisted ? "shortlisted" : ""}" data-shortlist="${f.id}" role="button" tabindex="0" aria-pressed="${shortlisted}" aria-label="${shortlisted ? "Remove from want-to-watch list" : "Add to want-to-watch list"}" title="${shortlisted ? "Remove from want-to-watch list" : "Add to want-to-watch list"}">🔖</div>
-      ${oscarWins ? `<div class="oscar-badge">🏆 ${f.oscar_wins.length}</div>` : ""}
+      <div class="watch-toggle ${watched ? "watched" : ""}" data-toggle="${f.id}" role="button" tabindex="0" aria-pressed="${watched}" aria-label="${watched ? "Mark as unwatched" : "Mark as watched"}" title="${watched ? "Mark as unwatched" : "Mark as watched"}">${icon("check", 14)}</div>
+      <div class="shortlist-toggle ${shortlisted ? "shortlisted" : ""}" data-shortlist="${f.id}" role="button" tabindex="0" aria-pressed="${shortlisted}" aria-label="${shortlisted ? "Remove from want-to-watch list" : "Add to want-to-watch list"}" title="${shortlisted ? "Remove from want-to-watch list" : "Add to want-to-watch list"}">${icon("bookmark", 13)}</div>
+      ${oscarWins ? `<div class="oscar-badge">${icon("award", 11)} ${f.oscar_wins.length}</div>` : ""}
     </div>
     <div class="meta">
       <p class="title">${escapeHtml(f.title)}</p>
@@ -366,11 +390,11 @@ function renderHome() {
     </div>
     <h2 class="section-title">Jump in</h2>
     <div class="chip-row">
-      <a href="#/classics" class="chip">📚 Browse the classics</a>
-      <a href="#/oscars" class="chip">🏆 Browse the Oscars</a>
-      <div class="chip" id="home-random">🎲 Surprise me</div>
+      <a href="#/classics" class="chip">${icon("books", 13)} Browse the classics</a>
+      <a href="#/oscars" class="chip">${icon("award", 13)} Browse the Oscars</a>
+      <div class="chip" id="home-random">${icon("shuffle", 13)} Surprise me</div>
     </div>
-    <h2 class="section-title">🎬 Today's picks</h2>
+    <h2 class="section-title icon-title">${icon("film", 16)} Today's picks</h2>
     <p class="subtle" style="margin-top:-8px">4 unwatched films picked for today — same set all day, a fresh batch tomorrow.</p>
     ${dailyPicksHtml()}
   `;
@@ -436,7 +460,7 @@ function renderClassics() {
 
   app.innerHTML = `
     <h1 class="page-title">Classics</h1>
-    <p class="subtle">The essential canon — 1,158 films from the "1001 Movies" list, plus every other Oscar-winning film. Tap the ✓ on a poster to mark it watched without opening it.</p>
+    <p class="subtle">The essential canon — 1,158 films from the "1001 Movies" list, plus every other Oscar-winning film. Tap the <span class="inline-icon">${icon("check", 12)}</span> on a poster to mark it watched without opening it.</p>
     <div class="controls">
       <input type="search" id="q" placeholder="Search title..." value="${escapeAttr(classicsState.q)}">
       <select id="decade"><option value="">All decades</option>${decades.map((d) => `<option value="${d}" ${classicsState.decade == d ? "selected" : ""}>${d}s</option>`).join("")}</select>
@@ -455,7 +479,7 @@ function renderClassics() {
       <div class="chip ${classicsState.filter === "watched" ? "active" : ""}" data-f="watched">Watched</div>
       <div class="chip ${classicsState.filter === "1001" ? "active" : ""}" data-f="1001">1001 list only</div>
       <div class="chip ${classicsState.filter === "oscars" ? "active" : ""}" data-f="oscars">Oscar winners only</div>
-      <div class="chip ${classicsState.filter === "shortlist" ? "active" : ""}" data-f="shortlist">🔖 Want to watch</div>
+      <div class="chip ${classicsState.filter === "shortlist" ? "active" : ""}" data-f="shortlist">${icon("bookmark", 13)} Want to watch</div>
     </div>
     <div id="results"></div>
   `;
@@ -554,7 +578,7 @@ function renderCeremony(ceremonyNum) {
               <div class="wname">${escapeHtml(w.winner_name)}</div>
               <div class="wfilm">${escapeHtml(w.film_title || "")}</div>
             </div>
-            ${w.film_id ? `<div class="watch-toggle ${watched ? "watched" : ""}" data-toggle="${w.film_id}" role="button" tabindex="0" aria-pressed="${watched}" style="position:static;flex-shrink:0" aria-label="${watched ? "Mark as unwatched" : "Mark as watched"}" title="Mark watched">✓</div>` : ""}
+            ${w.film_id ? `<div class="watch-toggle ${watched ? "watched" : ""}" data-toggle="${w.film_id}" role="button" tabindex="0" aria-pressed="${watched}" style="position:static;flex-shrink:0" aria-label="${watched ? "Mark as unwatched" : "Mark as watched"}" title="Mark watched">${icon("check", 14)}</div>` : ""}
           </div>`;
         }).join("")}
       </div>
@@ -638,9 +662,9 @@ function openRandomPicker() {
   const genres = [...new Set(films.flatMap((f) => f.genres || []))].sort();
 
   panel.innerHTML = `
-    <div class="detail-close"><button id="close-detail">✕</button></div>
+    <div class="detail-close"><button id="close-detail">${icon("x", 16)}</button></div>
     <div class="detail-body random-picker" style="padding-top:6px">
-      <h2>🎲 Surprise me</h2>
+      <h2 class="icon-title">${icon("shuffle", 18)} Surprise me</h2>
       <p class="subtle">Pick a filter or leave it on "Any" for a totally random classic.</p>
       <div class="controls">
         <select id="rp-decade"><option value="">Any decade</option>${decades.map((d) => `<option value="${d}">${d}s</option>`).join("")}</select>
@@ -743,18 +767,18 @@ function renderDetailPanel(f, analysis) {
   const trailerUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${f.title}${f.year ? " " + f.year : ""} trailer`)}`;
 
   panel.innerHTML = `
-    <div class="detail-close"><button id="close-detail">✕</button></div>
+    <div class="detail-close"><button id="close-detail">${icon("x", 16)}</button></div>
     <div class="detail-hero">
       ${f.poster ? `<img src="${escapeAttr(f.poster)}" alt="">` : `<div class="no-poster">${escapeHtml(f.title)}</div>`}
       <div>
         <p class="detail-title">${escapeHtml(f.title)}</p>
         <p class="detail-sub">${f.year || "Year unknown"}${f.director ? " · Directed by " + escapeHtml(f.director) : ""}${f.runtime_minutes ? " · " + f.runtime_minutes + " min" : ""}</p>
         ${f.genres && f.genres.length ? `<p class="detail-sub">${f.genres.map(escapeHtml).join(", ")}</p>` : ""}
-        ${oscarLines ? `<p class="detail-oscars">🏆 ${escapeHtml(oscarLines)}</p>` : ""}
-        <button id="watch-btn" class="watch-btn ${watched ? "watched" : ""}">${watched ? "✓ Watched" : "Mark as watched"}</button>
+        ${oscarLines ? `<p class="detail-oscars">${icon("award", 13)} ${escapeHtml(oscarLines)}</p>` : ""}
+        <button id="watch-btn" class="watch-btn ${watched ? "watched" : ""}">${watched ? icon("check", 14) + " Watched" : "Mark as watched"}</button>
         <div class="detail-actions-row">
-          <button id="shortlist-btn" class="shortlist-btn ${shortlisted ? "active" : ""}" aria-pressed="${shortlisted}">${shortlisted ? "🔖 On your list" : "🔖 Want to watch"}</button>
-          <a class="trailer-link" href="${trailerUrl}" target="_blank" rel="noopener">▶ Trailer</a>
+          <button id="shortlist-btn" class="shortlist-btn ${shortlisted ? "active" : ""}" aria-pressed="${shortlisted}">${icon("bookmark", 14)} ${shortlisted ? "On your list" : "Want to watch"}</button>
+          <a class="trailer-link" href="${trailerUrl}" target="_blank" rel="noopener">${icon("play", 13)} Trailer</a>
         </div>
       </div>
     </div>
@@ -771,7 +795,7 @@ function renderDetailPanel(f, analysis) {
         <h3>About this film</h3>
         ${synopsis ? `<p>${escapeHtml(synopsis)}</p>` : ""}
         ${whyIconic
-          ? `<p class="why-iconic">🎬 ${escapeHtml(whyIconic)}</p>`
+          ? `<p class="why-iconic">${icon("film", 14)} ${escapeHtml(whyIconic)}</p>`
           : ""}
         ${!synopsis && !whyIconic
           ? `<p class="pending-note">No write-up for this one yet.</p>`
@@ -779,7 +803,7 @@ function renderDetailPanel(f, analysis) {
       </div>
 
       ${hasContent ? `
-      <button class="spoiler-toggle" id="spoiler-toggle">🔒 Show deep analysis (contains spoilers)</button>
+      <button class="spoiler-toggle" id="spoiler-toggle">${icon("lock", 14)} Show deep analysis (contains spoilers)</button>
       <p class="spoiler-warning" style="display:none" id="spoiler-warning">Only tap this after watching — full plot and ending discussed below.</p>
       <div class="spoiler-body" id="spoiler-body">
         <p>${escapeHtml(hiddenAnalysis)}</p>
@@ -788,7 +812,7 @@ function renderDetailPanel(f, analysis) {
       <div class="detail-section">
         <h3>Deep analysis</h3>
         <p class="pending-note" id="ask-pending">Nobody's asked for this one yet.</p>
-        <button class="ask-claude-btn" id="ask-claude-btn">🤖 Ask Claude to write it up</button>
+        <button class="ask-claude-btn" id="ask-claude-btn">${icon("sparkle", 15)} Ask Claude to write it up</button>
       </div>
       `}
 
@@ -811,7 +835,7 @@ function renderDetailPanel(f, analysis) {
     toggleShortlisted(f.id);
     btn.classList.toggle("active", next);
     btn.setAttribute("aria-pressed", String(next));
-    btn.textContent = next ? "🔖 On your list" : "🔖 Want to watch";
+    btn.innerHTML = `${icon("bookmark", 14)} ${next ? "On your list" : "Want to watch"}`;
   });
   const spoilerToggle = document.getElementById("spoiler-toggle");
   if (spoilerToggle) {
@@ -857,7 +881,7 @@ async function handleAskClaude(f) {
   } catch (e) {
     console.error("Ask Claude failed:", e);
     btn.disabled = false;
-    btn.innerHTML = "🤖 Ask Claude to write it up";
+    btn.innerHTML = `${icon("sparkle", 15)} Ask Claude to write it up`;
     showToast("Couldn't reach the analysis service — try again in a moment.");
   }
 }
