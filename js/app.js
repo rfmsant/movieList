@@ -399,7 +399,7 @@ function dailyPicks(n) {
 }
 
 // ---------------------------------------------------------------- classics
-let classicsState = { q: "", decade: "", genre: "", filter: "all" };
+let classicsState = { q: "", decade: "", genre: "", filter: "all", sort: "default" };
 
 function decadeOf(year) {
   if (!year) return null;
@@ -417,6 +417,13 @@ function renderClassics() {
       <input type="search" id="q" placeholder="Search title..." value="${escapeAttr(classicsState.q)}">
       <select id="decade"><option value="">All decades</option>${decades.map((d) => `<option value="${d}" ${classicsState.decade == d ? "selected" : ""}>${d}s</option>`).join("")}</select>
       <select id="genre"><option value="">All genres</option>${genres.map((g) => `<option value="${escapeAttr(g)}" ${classicsState.genre === g ? "selected" : ""}>${escapeHtml(g)}</option>`).join("")}</select>
+      <select id="sort">
+        <option value="default" ${classicsState.sort === "default" ? "selected" : ""}>Sort: default</option>
+        <option value="year-desc" ${classicsState.sort === "year-desc" ? "selected" : ""}>Year: newest first</option>
+        <option value="year-asc" ${classicsState.sort === "year-asc" ? "selected" : ""}>Year: oldest first</option>
+        <option value="title" ${classicsState.sort === "title" ? "selected" : ""}>Title: A–Z</option>
+        <option value="rating" ${classicsState.sort === "rating" ? "selected" : ""}>Rating: highest first</option>
+      </select>
     </div>
     <div class="chip-row">
       <div class="chip ${classicsState.filter === "all" ? "active" : ""}" data-f="all">All</div>
@@ -431,6 +438,7 @@ function renderClassics() {
   document.getElementById("q").addEventListener("input", (e) => { classicsState.q = e.target.value; renderClassicsResults(); });
   document.getElementById("decade").addEventListener("change", (e) => { classicsState.decade = e.target.value; renderClassicsResults(); });
   document.getElementById("genre").addEventListener("change", (e) => { classicsState.genre = e.target.value; renderClassicsResults(); });
+  document.getElementById("sort").addEventListener("change", (e) => { classicsState.sort = e.target.value; renderClassicsResults(); });
   app.querySelectorAll(".chip[data-f]").forEach((c) => c.addEventListener("click", () => {
     classicsState.filter = c.dataset.f;
     renderClassics();
@@ -438,6 +446,13 @@ function renderClassics() {
 
   renderClassicsResults();
 }
+
+const CLASSICS_SORTERS = {
+  "year-desc": (a, b) => (b.year || 0) - (a.year || 0),
+  "year-asc": (a, b) => (a.year || 0) - (b.year || 0),
+  "title": (a, b) => a.title.localeCompare(b.title),
+  "rating": (a, b) => (b.rating || 0) - (a.rating || 0),
+};
 
 function renderClassicsResults() {
   const q = classicsState.q.trim().toLowerCase();
@@ -451,14 +466,33 @@ function renderClassicsResults() {
     if (classicsState.filter === "oscars" && !(f.oscar_wins || []).length) return false;
     return true;
   });
+  const sorter = CLASSICS_SORTERS[classicsState.sort];
+  if (sorter) list = [...list].sort(sorter);
+
+  const unwatchedInList = list.filter((f) => !isWatched(f.id));
   const results = document.getElementById("results");
   results.innerHTML = `
-    <p class="result-count">${list.length} film${list.length === 1 ? "" : "s"}</p>
+    <div class="result-toolbar">
+      <p class="result-count">${list.length} film${list.length === 1 ? "" : "s"}</p>
+      ${unwatchedInList.length > 0 ? `<button class="bulk-watch-btn" id="bulk-watch-btn" type="button">✓ Mark all ${unwatchedInList.length} as watched</button>` : ""}
+    </div>
     <div class="grid">${list.slice(0, 400).map(filmCard).join("")}</div>
     ${list.length > 400 ? `<p class="subtle" style="margin-top:12px">Showing first 400 — narrow your search to see more precisely.</p>` : ""}
     ${list.length === 0 ? `<div class="empty-state">No films match those filters.</div>` : ""}
   `;
   attachCardHandlers(results);
+
+  const bulkBtn = document.getElementById("bulk-watch-btn");
+  if (bulkBtn) {
+    bulkBtn.addEventListener("click", async () => {
+      const n = unwatchedInList.length;
+      if (!confirm(`Mark ${n} film${n === 1 ? "" : "s"} as watched? This can't be undone in bulk.`)) return;
+      bulkBtn.disabled = true;
+      bulkBtn.textContent = "Marking…";
+      await Promise.all(unwatchedInList.map((f) => setWatched(f.id, true)));
+      renderClassicsResults();
+    });
+  }
 }
 
 // ---------------------------------------------------------------- oscars
@@ -520,11 +554,38 @@ function renderCeremony(ceremonyNum) {
 }
 
 // ---------------------------------------------------------------- stats
+function breakdownRow(r) {
+  const pct = r.total ? Math.round((r.watched / r.total) * 100) : 0;
+  return `
+    <div class="breakdown-row">
+      <div class="breakdown-label">${escapeHtml(r.label)}</div>
+      <div class="breakdown-bar"><div class="breakdown-fill" style="width:${pct}%"></div></div>
+      <div class="breakdown-count">${r.watched}/${r.total}</div>
+    </div>`;
+}
+
 function renderStats() {
   const total = films.length;
   const watched = watchedCount(films);
   const oneThousandOne = films.filter((f) => f.in_1001_list);
   const bp = films.filter((f) => (f.oscar_wins || []).some((w) => w.category === "Best Picture"));
+
+  const decadeGroups = {};
+  films.forEach((f) => {
+    const d = decadeOf(f.year);
+    if (d == null) return;
+    (decadeGroups[d] = decadeGroups[d] || []).push(f);
+  });
+  const decadeRows = Object.keys(decadeGroups).map(Number).sort((a, b) => a - b).map((d) => ({
+    label: `${d}s`, watched: watchedCount(decadeGroups[d]), total: decadeGroups[d].length,
+  }));
+
+  const genreGroups = {};
+  films.forEach((f) => (f.genres || []).forEach((g) => { (genreGroups[g] = genreGroups[g] || []).push(f); }));
+  const genreRows = Object.keys(genreGroups)
+    .map((g) => ({ label: g, watched: watchedCount(genreGroups[g]), total: genreGroups[g].length }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 8);
 
   app.innerHTML = `
     <h1 class="page-title">Your progress</h1>
@@ -534,6 +595,13 @@ function renderStats() {
       <div class="stat-card"><div class="stat-num">${watchedCount(oneThousandOne)}/${oneThousandOne.length}</div><div class="stat-label">1001 list</div></div>
       <div class="stat-card"><div class="stat-num">${watchedCount(bp)}/${bp.length}</div><div class="stat-label">Best Picture winners</div></div>
     </div>
+
+    <h2 class="section-title">By decade</h2>
+    <div class="breakdown-list">${decadeRows.map(breakdownRow).join("")}</div>
+
+    <h2 class="section-title">By genre</h2>
+    <div class="breakdown-list">${genreRows.map(breakdownRow).join("")}</div>
+
     <h2 class="section-title">Recently watched</h2>
     <div class="grid">${films.filter((f) => isWatched(f.id)).slice(0, 24).map(filmCard).join("") || '<div class="empty-state">Nothing marked watched yet — go browse the classics.</div>'}</div>
   `;
@@ -737,4 +805,10 @@ function closeDetail() {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeDetail();
+  if (e.key === "/") {
+    const tag = document.activeElement?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable) return;
+    e.preventDefault();
+    openGlobalSearch();
+  }
 });
