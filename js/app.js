@@ -376,7 +376,6 @@ function renderHome() {
   const watched = watchedCount(films);
   const bp = films.filter((f) => (f.oscar_wins || []).some((w) => w.category === "Best Picture"));
   const bpWatched = watchedCount(bp);
-  const shareUrl = `${location.origin}${location.pathname}?friendname`;
 
   app.innerHTML = `
     <h1 class="page-title">Welcome back${watchedApi.PROFILE !== "rui" ? `, ${escapeHtml(watchedApi.PROFILE)}` : ""}</h1>
@@ -384,9 +383,6 @@ function renderHome() {
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-num">${watched}/${total}</div><div class="stat-label">All films</div></div>
       <div class="stat-card"><div class="stat-num">${bpWatched}/${bp.length}</div><div class="stat-label">Best Picture winners</div></div>
-    </div>
-    <div class="share-box">
-      Each person has their own watched-list. Share <code>${escapeHtml(shareUrl)}</code> (swap in their name) and they'll get their own list, on the same site.
     </div>
     <h2 class="section-title">Jump in</h2>
     <div class="chip-row">

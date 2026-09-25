@@ -433,7 +433,7 @@ p.subtle { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; max-widt
 }
 .detail-close button:hover { background: rgba(0,0,0,0.75); }
 .detail-hero { display: flex; gap: 16px; padding: 0 20px 16px; }
-.detail-hero img { width: 110px; border-radius: 8px; flex-shrink: 0; background: var(--bg-card); box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
+.detail-hero img { width: 110px; border-radius: 8px; flex-shrink: 0; background: var(--bg-card); box-shadow: 0 6px 18px rgba(0,0,0,0.4); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .detail-hero .no-poster { width: 110px; aspect-ratio: 2/3; border-radius: 8px; background: var(--bg-card); display:flex; align-items:center; justify-content:center; color: var(--text-dim); font-size: 0.7rem; text-align:center; padding: 6px; flex-shrink: 0; }
 .detail-hero > div { min-width: 0; }
 .detail-title { font-size: 1.2rem; font-weight: 700; margin: 0 0 4px; line-height: 1.25; }
