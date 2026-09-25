@@ -138,15 +138,22 @@ async function init() {
   const searchBtn = document.getElementById("search-btn");
   const searchBar = document.getElementById("global-search-bar");
   const searchInput = document.getElementById("global-search-input");
+  const searchClear = document.getElementById("global-search-clear");
   searchBtn.addEventListener("click", () => {
-    searchBar.classList.toggle("hidden");
-    if (!searchBar.classList.contains("hidden")) searchInput.focus();
+    if (searchBar.classList.contains("hidden")) openGlobalSearch();
+    else closeGlobalSearch();
   });
+  searchClear.addEventListener("click", closeGlobalSearch);
+  searchInput.addEventListener("input", () => renderSearchDropdown(searchInput.value));
   searchInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") goSearch(searchInput.value);
-    if (e.key === "Escape") { searchBar.classList.add("hidden"); searchInput.blur(); }
+    if (e.key === "Escape") closeGlobalSearch();
   });
-  searchInput.addEventListener("search", () => goSearch(searchInput.value));
+  document.addEventListener("click", (e) => {
+    if (searchBar.classList.contains("hidden")) return;
+    if (searchBar.contains(e.target) || searchBtn.contains(e.target)) return;
+    closeGlobalSearch();
+  });
 
   const tag = document.getElementById("profile-tag");
   tag.textContent = `👤 ${watchedApi.PROFILE}`;
@@ -176,10 +183,53 @@ function showToast(msg) {
   setTimeout(() => t.classList.add("hidden"), 4000);
 }
 
+function openGlobalSearch() {
+  document.getElementById("global-search-bar").classList.remove("hidden");
+  document.getElementById("global-search-input").focus();
+}
+
+function closeGlobalSearch() {
+  document.getElementById("global-search-bar").classList.add("hidden");
+  document.getElementById("global-search-input").value = "";
+  document.getElementById("global-search-results").innerHTML = "";
+}
+
+function renderSearchDropdown(q) {
+  const results = document.getElementById("global-search-results");
+  const query = q.trim().toLowerCase();
+  if (!query) { results.innerHTML = ""; return; }
+  const matches = films.filter((f) => f.title.toLowerCase().includes(query));
+  if (!matches.length) {
+    results.innerHTML = `<div class="gsr-empty">No films match "${escapeHtml(q.trim())}".</div>`;
+    return;
+  }
+  const shown = matches.slice(0, 6);
+  results.innerHTML = `
+    ${shown.map((f) => `
+      <div class="gsr-row" data-id="${escapeAttr(f.id)}" role="button" tabindex="0">
+        ${f.poster ? `<img class="gsr-poster" src="${escapeAttr(f.poster)}" alt="" loading="lazy">` : `<div class="gsr-poster"></div>`}
+        <div class="gsr-info">
+          <div class="gsr-title">${escapeHtml(f.title)}</div>
+          <div class="gsr-year">${f.year || ""}</div>
+        </div>
+      </div>`).join("")}
+    ${matches.length > shown.length ? `<div class="gsr-more" id="gsr-see-all">See all ${matches.length} results</div>` : ""}
+  `;
+  results.querySelectorAll(".gsr-row").forEach((row) => {
+    const go = () => { closeGlobalSearch(); openDetail(row.dataset.id); };
+    row.addEventListener("click", go);
+    row.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); }
+    });
+  });
+  const seeAll = document.getElementById("gsr-see-all");
+  if (seeAll) seeAll.addEventListener("click", () => goSearch(q));
+}
+
 function goSearch(q) {
   classicsState.q = q.trim();
   classicsState.filter = "all";
-  document.getElementById("global-search-bar").classList.add("hidden");
+  closeGlobalSearch();
   if (route().name === "classics") renderClassics();
   else location.hash = "#/classics";
 }

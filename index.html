@@ -29,7 +29,11 @@
     <button id="random-btn" type="button" title="Pick something random" aria-label="Pick something random">🎲</button>
   </div>
   <div id="global-search-bar" class="global-search-bar hidden">
-    <input type="search" id="global-search-input" placeholder="Search any film..." aria-label="Search films">
+    <div class="global-search-input-wrap">
+      <input type="search" id="global-search-input" placeholder="Search any film..." aria-label="Search films">
+      <button id="global-search-clear" type="button" aria-label="Close search" title="Close search">✕</button>
+    </div>
+    <div id="global-search-results" class="global-search-results"></div>
   </div>
 </header>
 
