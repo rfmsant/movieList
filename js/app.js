@@ -55,7 +55,7 @@ function fireConfettiAt(x, y) {
   document.body.appendChild(canvas);
   const ctx = canvas.getContext("2d");
 
-  const colors = ["#d4a24c", "#e8c47f", "#4caf82", "#f1ede6", "#8a6b2e"];
+  const colors = ["#d4a24c", "#e8c47f", "#4caf82", "#eef0f4", "#8a6b2e"];
   const count = 46;
   const particles = Array.from({ length: count }, () => {
     const angle = Math.random() * Math.PI - Math.PI / 2 - Math.PI / 4; // upward-ish burst
