@@ -6,7 +6,7 @@
 //   - poster images (TMDB, cross-origin): cache first, since those never
 //     change once fetched — saves data and loads instantly on repeat visits.
 // Bump CACHE_VERSION whenever this file changes so old caches get cleared.
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_NAME = `cinema-classics-${CACHE_VERSION}`;
 
 self.addEventListener("install", (event) => {
@@ -30,9 +30,11 @@ self.addEventListener("fetch", (event) => {
   const isSameOrigin = url.origin === self.location.origin;
 
   if (isSameOrigin) {
-    // network-first for the app shell + data
+    // network-first for the app shell + data. cache: "no-store" bypasses the
+    // browser's own HTTP cache too, so a push shows up on next load instead
+    // of waiting out whatever Cache-Control the host sends.
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: "no-store" })
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
