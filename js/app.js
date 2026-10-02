@@ -836,6 +836,7 @@ function renderDetailPanel(f, analysis) {
         <p class="detail-title">${escapeHtml(f.title)}</p>
         <p class="detail-sub">${f.year || "Year unknown"}${f.director ? " · Directed by " + escapeHtml(f.director) : ""}${f.runtime_minutes ? " · " + f.runtime_minutes + " min" : ""}</p>
         ${f.genres && f.genres.length ? `<p class="detail-sub">${f.genres.map(escapeHtml).join(", ")}</p>` : ""}
+        ${f.cast && f.cast.length ? `<p class="detail-sub">Starring ${f.cast.slice(0, 4).map(escapeHtml).join(", ")}</p>` : ""}
         ${oscarLines ? `<p class="detail-oscars">${icon("oscar", 13)} ${escapeHtml(oscarLines)}</p>` : ""}
         <button id="watch-btn" class="watch-btn ${watched ? "watched" : ""}">${watched ? icon("check", 14) + " Watched" : "Mark as watched"}</button>
         <div class="detail-actions-row">
@@ -847,14 +848,7 @@ function renderDetailPanel(f, analysis) {
     <div class="detail-body">
       ${watchProvidersHtml(f)}
 
-      ${f.cast && f.cast.length ? `
       <div class="detail-section">
-        <h3>Cast</h3>
-        <p>${f.cast.slice(0, 6).map(escapeHtml).join(", ")}</p>
-      </div>` : ""}
-
-      <div class="detail-section">
-        <h3>About this film</h3>
         ${synopsis ? `<p>${escapeHtml(synopsis)}</p>` : ""}
         ${whyIconic
           ? `<p class="why-iconic">${icon("film", 14)} ${escapeHtml(whyIconic)}</p>`
@@ -872,8 +866,7 @@ function renderDetailPanel(f, analysis) {
       </div>
       ` : `
       <div class="detail-section">
-        <h3>Deep analysis</h3>
-        <p class="pending-note" id="ask-pending">Nobody's asked for this one yet.</p>
+        <p class="pending-note" id="ask-pending">Nobody's asked for a deep analysis of this one yet.</p>
         <button class="ask-claude-btn" id="ask-claude-btn">${icon("sparkle", 15)} Ask Claude to write it up</button>
       </div>
       `}
