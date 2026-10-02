@@ -888,8 +888,12 @@ function renderDetailPanel(f, analysis) {
 
   document.getElementById("close-detail").addEventListener("click", closeDetail);
   document.getElementById("watch-btn").addEventListener("click", (e) => {
-    if (!isWatched(f.id)) fireConfettiFromEl(e.currentTarget);
+    const btn = e.currentTarget;
+    const next = !isWatched(f.id);
+    if (next) fireConfettiFromEl(btn);
     toggleWatched(f.id);
+    btn.classList.toggle("watched", next);
+    btn.innerHTML = next ? `${icon("check", 14)} Watched` : "Mark as watched";
   });
   document.getElementById("shortlist-btn").addEventListener("click", (e) => {
     const btn = e.currentTarget;
