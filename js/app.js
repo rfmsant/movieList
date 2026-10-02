@@ -113,6 +113,7 @@ let films = [];
 let filmsById = new Map();
 let oscars = [];
 let oscarsByCeremony = new Map();
+let oscarsState = { category: "" };
 
 const app = document.getElementById("app");
 const overlay = document.getElementById("detail-overlay");
@@ -526,11 +527,47 @@ function renderClassicsResults() {
 }
 
 // ---------------------------------------------------------------- oscars
+function allOscarCategories() {
+  const set = new Set();
+  oscars.forEach((c) => c.categories.forEach((cat) => set.add(cat.category)));
+  return [...set].sort();
+}
+
+function oscarCategorySelectHtml(categories) {
+  return `
+    <div class="controls">
+      <select id="oscar-category">
+        <option value="">All categories</option>
+        ${categories.map((c) => `<option value="${escapeAttr(c)}" ${oscarsState.category === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}
+      </select>
+    </div>`;
+}
+
+function winnerRowHtml(w) {
+  const f = w.film_id ? filmsById.get(w.film_id) : null;
+  const thumb = f && f.poster ? `<img class="thumb" src="${escapeAttr(f.poster)}" loading="lazy">` : `<div class="thumb"></div>`;
+  const watched = w.film_id ? isWatched(w.film_id) : false;
+  const yearBit = w.year_film ? ` · ${w.year_film}` : "";
+  return `
+    <div class="winner-row" ${w.film_id ? `data-film="${w.film_id}" role="button" tabindex="0" aria-label="${escapeAttr(w.film_title || w.winner_name)}"` : ""}>
+      ${thumb}
+      <div class="wtext">
+        <div class="wname">${escapeHtml(w.film_title || w.winner_name)}</div>
+        ${w.film_title ? `<div class="wfilm">${escapeHtml(w.winner_name)}${yearBit}</div>` : ""}
+      </div>
+      ${w.film_id ? `<div class="watch-toggle ${watched ? "watched" : ""}" data-toggle="${w.film_id}" role="button" tabindex="0" aria-pressed="${watched}" style="position:static;flex-shrink:0" aria-label="${watched ? "Mark as unwatched" : "Mark as watched"}" title="Mark watched">${icon("check", 14)}</div>` : ""}
+    </div>`;
+}
+
 function renderOscarsList() {
+  const categories = allOscarCategories();
+  if (oscarsState.category) return renderOscarsByCategory(categories);
+
   const sorted = [...oscars].sort((a, b) => b.ceremony - a.ceremony);
   app.innerHTML = `
     <h1 class="page-title">Academy Awards</h1>
     <p class="subtle">Every competitive category winner, from the 1st ceremony (1929, honoring "Wings") to the 98th (2026).</p>
+    ${oscarCategorySelectHtml(categories)}
     <div class="ceremony-list">
       ${sorted.map((c) => {
         const bp = (c.categories.find((cat) => cat.category === "Best Picture") || {}).winners || [];
@@ -546,6 +583,34 @@ function renderOscarsList() {
       }).join("")}
     </div>
   `;
+  document.getElementById("oscar-category").addEventListener("change", (e) => {
+    oscarsState.category = e.target.value;
+    renderOscarsList();
+  });
+}
+
+function renderOscarsByCategory(categories) {
+  const rows = [];
+  oscars.forEach((c) => {
+    const cat = c.categories.find((x) => x.category === oscarsState.category);
+    if (!cat) return;
+    cat.winners.forEach((w) => rows.push({ ...w, year_film: c.year_film }));
+  });
+  rows.sort((a, b) => (b.year_film || 0) - (a.year_film || 0));
+
+  app.innerHTML = `
+    <h1 class="page-title">${escapeHtml(oscarsState.category)}</h1>
+    <p class="subtle">${rows.length} winner${rows.length === 1 ? "" : "s"}, every year, newest first.</p>
+    ${oscarCategorySelectHtml(categories)}
+    <div class="category-block">
+      ${rows.map(winnerRowHtml).join("")}
+    </div>
+  `;
+  document.getElementById("oscar-category").addEventListener("change", (e) => {
+    oscarsState.category = e.target.value;
+    renderOscarsList();
+  });
+  attachCardHandlers(app);
 }
 
 function ordinal(n) {
@@ -571,8 +636,8 @@ function renderCeremony(ceremonyNum) {
           <div class="winner-row" ${w.film_id ? `data-film="${w.film_id}" role="button" tabindex="0" aria-label="${escapeAttr(w.film_title || w.winner_name)}"` : ""}>
             ${thumb}
             <div class="wtext">
-              <div class="wname">${escapeHtml(w.winner_name)}</div>
-              <div class="wfilm">${escapeHtml(w.film_title || "")}</div>
+              <div class="wname">${escapeHtml(w.film_title || w.winner_name)}</div>
+              ${w.film_title ? `<div class="wfilm">${escapeHtml(w.winner_name)}</div>` : ""}
             </div>
             ${w.film_id ? `<div class="watch-toggle ${watched ? "watched" : ""}" data-toggle="${w.film_id}" role="button" tabindex="0" aria-pressed="${watched}" style="position:static;flex-shrink:0" aria-label="${watched ? "Mark as unwatched" : "Mark as watched"}" title="Mark watched">${icon("check", 14)}</div>` : ""}
           </div>`;
