@@ -1,12 +1,16 @@
 :root {
-  --bg: #0f1115;
-  --bg-elevated: #171a21;
-  --bg-card: #1c1f28;
-  --bg-card-hover: #242835;
-  --border: #2a2e3a;
-  --border-hover: #3a4054;
-  --text: #eef0f4;
-  --text-dim: #9aa1b0;
+  /* A warm, espresso-toned dark rather than the cool blue-black "tech
+     dashboard" default — reads as film stock/theater, not SaaS, and keeps
+     one consistent warm gray family instead of mixing warm (gold) with
+     cool (blue-gray) neutrals. */
+  --bg: #110f0d;
+  --bg-elevated: #1a1511;
+  --bg-card: #211b16;
+  --bg-card-hover: #2b241d;
+  --border: #2f2821;
+  --border-hover: #413527;
+  --text: #f1ede6;
+  --text-dim: #a89d8c;
   --accent: #d4a24c;
   --accent-soft: #e8c47f;
   --accent-dim: #8a6b2e;
@@ -78,7 +82,7 @@ p { text-wrap: pretty; }
 /* ---------- Topbar ---------- */
 .topbar {
   position: sticky; top: 0; z-index: var(--z-sticky);
-  background: rgba(15,17,21,0.92);
+  background: rgba(17,15,13,0.92);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
   padding-top: var(--safe-top);
@@ -275,7 +279,7 @@ main#app {
 }
 .breakdown-bar { flex: 1 1 auto; height: 8px; border-radius: 999px; background: var(--bg-card); overflow: hidden; }
 .breakdown-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width .3s var(--ease-out); }
-.breakdown-count { width: 56px; flex-shrink: 0; text-align: right; font-size: 0.8rem; color: var(--text-dim); }
+.breakdown-count { width: 56px; flex-shrink: 0; text-align: right; font-size: 0.8rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 @media (max-width: 480px) {
   .breakdown-label { width: 68px; font-size: 0.78rem; }
   .breakdown-count { width: 48px; }
@@ -301,7 +305,7 @@ main#app {
   .card:hover {
     border-color: var(--border-hover);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    box-shadow: 0 8px 20px rgba(5,6,12,0.45);
   }
   .card:hover img { transform: scale(1.03); }
 }
@@ -433,7 +437,7 @@ p.subtle { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; max-widt
 }
 .detail-close button:hover { background: rgba(0,0,0,0.75); }
 .detail-hero { display: flex; gap: 16px; padding: 0 20px 16px; }
-.detail-hero img { width: 110px; border-radius: 8px; flex-shrink: 0; background: var(--bg-card); box-shadow: 0 6px 18px rgba(0,0,0,0.4); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.detail-hero img { width: 110px; border-radius: 8px; flex-shrink: 0; background: var(--bg-card); box-shadow: 0 6px 18px rgba(5,6,12,0.5); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .detail-hero .no-poster { width: 110px; aspect-ratio: 2/3; border-radius: 8px; background: var(--bg-card); display:flex; align-items:center; justify-content:center; color: var(--text-dim); font-size: 0.7rem; text-align:center; padding: 6px; flex-shrink: 0; }
 .detail-hero > div { min-width: 0; }
 .detail-title { font-size: 1.2rem; font-weight: 700; margin: 0 0 4px; line-height: 1.25; }
@@ -547,6 +551,7 @@ p.subtle { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; max-widt
 .stat-num {
   display: block; font-family: "Fraunces", Georgia, serif; font-weight: 600;
   font-size: 1.85rem; line-height: 1; color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 .stat-label { font-size: 0.76rem; color: var(--text-dim); margin-top: 6px; }
 
@@ -556,7 +561,7 @@ p.subtle { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; max-widt
   background: var(--bg-card); border: 1px solid var(--border); color: var(--text);
   padding: 10px 16px; border-radius: 999px; font-size: 0.85rem; z-index: var(--z-toast);
   max-width: calc(100vw - 32px); text-align: center;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  box-shadow: 0 6px 20px rgba(5,6,12,0.5);
   animation: toast-in .2s var(--ease-out);
 }
 @keyframes toast-in {

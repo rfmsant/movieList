@@ -55,7 +55,7 @@ function fireConfettiAt(x, y) {
   document.body.appendChild(canvas);
   const ctx = canvas.getContext("2d");
 
-  const colors = ["#d4a24c", "#e8c47f", "#4caf82", "#eef0f4", "#8a6b2e"];
+  const colors = ["#d4a24c", "#e8c47f", "#4caf82", "#f1ede6", "#8a6b2e"];
   const count = 46;
   const particles = Array.from({ length: count }, () => {
     const angle = Math.random() * Math.PI - Math.PI / 2 - Math.PI / 4; // upward-ish burst
@@ -217,7 +217,7 @@ function renderSearchDropdown(q) {
   results.innerHTML = `
     ${shown.map((f) => `
       <div class="gsr-row" data-id="${escapeAttr(f.id)}" role="button" tabindex="0">
-        ${f.poster ? `<img class="gsr-poster" src="${escapeAttr(f.poster)}" alt="" loading="lazy">` : `<div class="gsr-poster"></div>`}
+        ${f.poster ? `<img class="gsr-poster" src="${escapeAttr(f.poster)}" alt="${escapeAttr(f.title)} poster" loading="lazy">` : `<div class="gsr-poster"></div>`}
         <div class="gsr-info">
           <div class="gsr-title">${escapeHtml(f.title)}</div>
           <div class="gsr-year">${f.year || ""}</div>
@@ -274,7 +274,7 @@ function watchedCount(list) {
 
 function posterImg(f, cls) {
   if (f.poster) {
-    return `<img src="${escapeAttr(f.poster)}" alt="" loading="lazy" class="${cls || ""}">`;
+    return `<img src="${escapeAttr(f.poster)}" alt="${escapeAttr(f.title)} poster" loading="lazy" class="${cls || ""}">`;
   }
   return `<div class="no-poster ${cls || ""}">${escapeHtml(f.title)}</div>`;
 }
@@ -546,7 +546,7 @@ function oscarCategorySelectHtml(categories) {
 
 function winnerRowHtml(w) {
   const f = w.film_id ? filmsById.get(w.film_id) : null;
-  const thumb = f && f.poster ? `<img class="thumb" src="${escapeAttr(f.poster)}" loading="lazy">` : `<div class="thumb"></div>`;
+  const thumb = f && f.poster ? `<img class="thumb" src="${escapeAttr(f.poster)}" alt="${escapeAttr(w.film_title || f.title)} poster" loading="lazy">` : `<div class="thumb"></div>`;
   const watched = w.film_id ? isWatched(w.film_id) : false;
   const yearBit = w.year_film ? ` · ${w.year_film}` : "";
   return `
@@ -631,7 +631,7 @@ function renderCeremony(ceremonyNum) {
         <div class="category-name">${escapeHtml(cat.category)}</div>
         ${cat.winners.map((w) => {
           const f = w.film_id ? filmsById.get(w.film_id) : null;
-          const thumb = f && f.poster ? `<img class="thumb" src="${escapeAttr(f.poster)}" loading="lazy">` : `<div class="thumb"></div>`;
+          const thumb = f && f.poster ? `<img class="thumb" src="${escapeAttr(f.poster)}" alt="${escapeAttr(w.film_title || f.title)} poster" loading="lazy">` : `<div class="thumb"></div>`;
           const watched = w.film_id ? isWatched(w.film_id) : false;
           return `
           <div class="winner-row" ${w.film_id ? `data-film="${w.film_id}" role="button" tabindex="0" aria-label="${escapeAttr(w.film_title || w.winner_name)}"` : ""}>
@@ -831,7 +831,7 @@ function renderDetailPanel(f, analysis) {
   panel.innerHTML = `
     <div class="detail-close"><button id="close-detail">${icon("x", 16)}</button></div>
     <div class="detail-hero">
-      ${f.poster ? `<img src="${escapeAttr(f.poster)}" alt="">` : `<div class="no-poster">${escapeHtml(f.title)}</div>`}
+      ${f.poster ? `<img src="${escapeAttr(f.poster)}" alt="${escapeAttr(f.title)} poster">` : `<div class="no-poster">${escapeHtml(f.title)}</div>`}
       <div>
         <p class="detail-title">${escapeHtml(f.title)}</p>
         <p class="detail-sub">${f.year || "Year unknown"}${f.director ? " · Directed by " + escapeHtml(f.director) : ""}${f.runtime_minutes ? " · " + f.runtime_minutes + " min" : ""}</p>
