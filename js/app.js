@@ -295,6 +295,7 @@ const ICONS = {
   x: `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>`,
   check: `<polyline points="20 6 9 17 4 12"/>`,
   award: `<polygon points="12,2 14.7,8.6 22,9.3 16.5,14 18.2,21 12,17.3 5.8,21 7.5,14 2,9.3 9.3,8.6"/>`,
+  oscar: `<circle cx="12" cy="5" r="2.2"/><polygon points="9.2,8 14.8,8 13.3,15.3 10.7,15.3"/><rect x="9" y="15.3" width="6" height="1.8" rx="0.4"/><rect x="7.6" y="17.1" width="8.8" height="1.9" rx="0.4"/>`,
   bookmark: `<path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>`,
   lock: `<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>`,
   play: `<polygon points="5,3 19,12 5,21"/>`,
@@ -319,7 +320,7 @@ function filmCard(f) {
       ${posterImg(f)}
       <div class="watch-toggle ${watched ? "watched" : ""}" data-toggle="${f.id}" role="button" tabindex="0" aria-pressed="${watched}" aria-label="${watched ? "Mark as unwatched" : "Mark as watched"}" title="${watched ? "Mark as unwatched" : "Mark as watched"}">${icon("check", 14)}</div>
       <div class="shortlist-toggle ${shortlisted ? "shortlisted" : ""}" data-shortlist="${f.id}" role="button" tabindex="0" aria-pressed="${shortlisted}" aria-label="${shortlisted ? "Remove from want-to-watch list" : "Add to want-to-watch list"}" title="${shortlisted ? "Remove from want-to-watch list" : "Add to want-to-watch list"}">${icon("bookmark", 13)}</div>
-      ${oscarWins ? `<div class="oscar-badge">${icon("award", 11)} ${f.oscar_wins.length}</div>` : ""}
+      ${oscarWins ? `<div class="oscar-badge">${icon("oscar", 11)} ${f.oscar_wins.length}</div>` : ""}
     </div>
     <div class="meta">
       <p class="title">${escapeHtml(f.title)}</p>
@@ -388,7 +389,7 @@ function renderHome() {
     <h2 class="section-title">Jump in</h2>
     <div class="chip-row">
       <a href="#/classics" class="chip">${icon("books", 13)} Browse the classics</a>
-      <a href="#/oscars" class="chip">${icon("award", 13)} Browse the Oscars</a>
+      <a href="#/oscars" class="chip">${icon("oscar", 13)} Browse the Oscars</a>
       <div class="chip" id="home-random">${icon("shuffle", 13)} Surprise me</div>
     </div>
     <h2 class="section-title icon-title">${icon("film", 16)} Today's picks</h2>
@@ -835,7 +836,7 @@ function renderDetailPanel(f, analysis) {
         <p class="detail-title">${escapeHtml(f.title)}</p>
         <p class="detail-sub">${f.year || "Year unknown"}${f.director ? " · Directed by " + escapeHtml(f.director) : ""}${f.runtime_minutes ? " · " + f.runtime_minutes + " min" : ""}</p>
         ${f.genres && f.genres.length ? `<p class="detail-sub">${f.genres.map(escapeHtml).join(", ")}</p>` : ""}
-        ${oscarLines ? `<p class="detail-oscars">${icon("award", 13)} ${escapeHtml(oscarLines)}</p>` : ""}
+        ${oscarLines ? `<p class="detail-oscars">${icon("oscar", 13)} ${escapeHtml(oscarLines)}</p>` : ""}
         <button id="watch-btn" class="watch-btn ${watched ? "watched" : ""}">${watched ? icon("check", 14) + " Watched" : "Mark as watched"}</button>
         <div class="detail-actions-row">
           <button id="shortlist-btn" class="shortlist-btn ${shortlisted ? "active" : ""}" aria-pressed="${shortlisted}">${icon("bookmark", 14)} ${shortlisted ? "On your list" : "Want to watch"}</button>
